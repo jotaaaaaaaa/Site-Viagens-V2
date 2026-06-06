@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Um diario cinematografico de viagem por Madrid, Alicante e Amsterdam."
+    />
+    <title>Site Viagem | Recordações</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=DM+Sans:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css?v=20260606-fotos-unificadas" />
+  </head>
+  <body class="site-locked">
+    <div class="password-gate" id="passwordGate" role="dialog" aria-modal="true" aria-labelledby="gateTitle">
+      <form class="gate-panel" id="passwordForm" autocomplete="off">
+        <p class="gate-kicker">mural privado</p>
+        <h1 id="gateTitle">mural de viagem</h1>
+        <label class="gate-label" for="passwordInput">Senha</label>
+        <div class="gate-field">
+          <input
+            id="passwordInput"
+            name="password"
+            type="password"
+            inputmode="text"
+            autocomplete="current-password"
+            aria-describedby="gateMessage"
+            required
+          />
+          <button class="gate-submit" id="passwordSubmit" type="submit">Entrar</button>
+        </div>
+        <p class="gate-message" id="gateMessage" aria-live="polite"></p>
+        <div class="gate-warning" id="gateWarning" hidden>
+          <div class="gate-carousel" aria-label="Aviso de senha errada">
+            <figure class="gate-slide is-active" data-gate-slide="0">
+              <div class="gate-photo">
+                <img
+                  src="./assets/gate/gata-1.jpg"
+                  data-src="./assets/gate/gata-1.jpg"
+                  data-fallback="./assets/gato-lingua.gif"
+                  alt="Gata olhando para a camera"
+                />
+              </div>
+              <figcaption>vai pro lado</figcaption>
+            </figure>
+            <figure class="gate-slide" data-gate-slide="1">
+              <div class="gate-photo">
+                <img
+                  src="./assets/gate/gata-2.jpg"
+                  data-src="./assets/gate/gata-2.jpg"
+                  data-fallback="./assets/gato-lingua.gif"
+                  alt="Gata em foto de perto"
+                />
+              </div>
+              <figcaption>sai daqui</figcaption>
+            </figure>
+            <button class="gate-arrow" id="gateNext" type="button" aria-label="Ir para a proxima foto">
+              <span aria-hidden="true">→</span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <nav class="floating-nav" aria-label="Navegação principal">
+      <a class="nav-mark" href="#madrid" aria-label="Voltar para Madrid">
+        mural de viagem
+      </a>
+      <div class="nav-links" aria-label="Cidades">
+        <a href="#madrid">Madrid</a>
+        <a href="#alicante">Alicante</a>
+        <a href="#amsterdam">Amsterdam</a>
+      </div>
+      <div class="nav-actions" aria-label="Atalhos">
+        <a class="calendar-nav nav-action-link" id="calendarNav" href="#viagens" aria-label="Abrir viagens">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M8 2v4" />
+            <path d="M16 2v4" />
+            <path d="M4.5 9.5h15" />
+            <path d="M6.5 4.5h11A2.5 2.5 0 0 1 20 7v10.5A2.5 2.5 0 0 1 17.5 20h-11A2.5 2.5 0 0 1 4 17.5V7a2.5 2.5 0 0 1 2.5-2.5Z" />
+          </svg>
+        </a>
+        <a
+          class="favorite-nav nav-action-link"
+          id="favoriteNav"
+          href="#favoritos"
+          aria-label="Abrir curtidas no mural"
+        >
+          <span aria-hidden="true">&hearts;</span>
+          <span id="favoriteCount">0</span>
+        </a>
+      </div>
+    </nav>
+
+    <main>
+      <section class="city-hero hero-madrid" id="madrid" aria-labelledby="madrid-title">
+        <div class="hero-shade"></div>
+        <div class="hero-content">
+          <p class="hero-kicker">cidade 01</p>
+          <h1 id="madrid-title">Madrid</h1>
+        </div>
+        <div class="scroll-line" aria-hidden="true"></div>
+      </section>
+
+      <section class="gallery-section gallery-madrid" aria-labelledby="madrid-gallery-title">
+        <div class="section-intro reveal">
+          <p class="eyebrow">mural</p>
+          <h2 id="madrid-gallery-title">Madrid</h2>
+          <div class="walk-stat" aria-label="Total de passos em Madrid">
+            <span>passos caminhados</span>
+            <strong>48.037</strong>
+          </div>
+          <div class="upload-actions">
+            <button class="add-photo-button" type="button" data-add-photo="madrid">
+              <span aria-hidden="true">+</span>
+              Adicionar foto
+            </button>
+            <input class="photo-upload" type="file" data-photo-input="madrid" accept="image/*" multiple hidden />
+          </div>
+        </div>
+        <div class="memory-grid" id="madridGallery" data-city="madrid"></div>
+      </section>
+
+      <section class="transition-band transition-mediterranean" aria-label="Transição para Alicante">
+        <div class="route-mark" aria-hidden="true"><span></span></div>
+      </section>
+
+      <section class="city-hero hero-alicante" id="alicante" aria-labelledby="alicante-title">
+        <div class="hero-shade"></div>
+        <div class="hero-content reveal">
+          <p class="hero-kicker">cidade 02</p>
+          <h1 id="alicante-title">Alicante</h1>
+        </div>
+        <div class="scroll-line" aria-hidden="true"></div>
+      </section>
+
+      <section class="gallery-section gallery-alicante" aria-labelledby="alicante-gallery-title">
+        <div class="section-intro reveal">
+          <p class="eyebrow">mural</p>
+          <h2 id="alicante-gallery-title">Alicante</h2>
+          <div class="walk-stat" aria-label="Total de passos em Alicante">
+            <span>passos caminhados</span>
+            <strong>52.828</strong>
+          </div>
+          <div class="upload-actions">
+            <button class="add-photo-button" type="button" data-add-photo="alicante">
+              <span aria-hidden="true">+</span>
+              Adicionar foto
+            </button>
+            <input class="photo-upload" type="file" data-photo-input="alicante" accept="image/*" multiple hidden />
+          </div>
+        </div>
+        <div class="memory-grid" id="alicanteGallery" data-city="alicante"></div>
+      </section>
+
+      <section class="transition-band transition-canal" aria-label="Transição para Amsterdam">
+        <div class="route-mark" aria-hidden="true"><span></span></div>
+      </section>
+
+      <section class="city-hero hero-amsterdam" id="amsterdam" aria-labelledby="amsterdam-title">
+        <div class="hero-shade"></div>
+        <div class="hero-content reveal">
+          <p class="hero-kicker">cidade 03</p>
+          <h1 id="amsterdam-title">Amsterdam</h1>
+        </div>
+        <div class="scroll-line" aria-hidden="true"></div>
+      </section>
+
+      <section class="gallery-section gallery-amsterdam" aria-labelledby="amsterdam-gallery-title">
+        <div class="section-intro reveal">
+          <p class="eyebrow">mural</p>
+          <h2 id="amsterdam-gallery-title">Amsterdam</h2>
+          <div class="walk-stat" aria-label="Total de passos em Amsterdam">
+            <span>passos caminhados</span>
+            <strong>74.291</strong>
+          </div>
+          <div class="upload-actions">
+            <button class="add-photo-button" type="button" data-add-photo="amsterdam">
+              <span aria-hidden="true">+</span>
+              Adicionar foto
+            </button>
+            <input class="photo-upload" type="file" data-photo-input="amsterdam" accept="image/*" multiple hidden />
+          </div>
+        </div>
+        <div class="memory-grid" id="amsterdamGallery" data-city="amsterdam"></div>
+      </section>
+
+      <section class="trips-section" id="viagens" aria-labelledby="trips-title">
+        <div class="section-intro reveal">
+          <p class="eyebrow">arquivo</p>
+          <h2 id="trips-title">Viagens</h2>
+          <div class="memory-meta" aria-label="Viagens registradas">
+            <span>mem&oacute;rias</span>
+            <strong>1 desbloqueada</strong>
+          </div>
+        </div>
+
+        <div class="trips-grid" aria-label="Lista de viagens">
+          <a class="trip-card trip-card-active reveal" href="#madrid" aria-label="Abrir viagem Madrid, Alicante e Amsterdam">
+            <div class="trip-card-collage" aria-hidden="true">
+              <span class="trip-bg-madrid"></span>
+              <span class="trip-bg-alicante"></span>
+              <span class="trip-bg-amsterdam"></span>
+            </div>
+            <div class="trip-card-content">
+              <p class="trip-status">desbloqueada</p>
+              <h3>Madrid<br />Alicante<br />Amsterdam</h3>
+              <div class="trip-card-actions">
+                <span class="trip-pill">abrir mural</span>
+                <span class="trip-pill trip-pill-steps">175.156 passos</span>
+              </div>
+            </div>
+          </a>
+
+          <button class="trip-card trip-card-locked trip-future-gold reveal" type="button" data-locked-trip>
+            <span class="trip-lock" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M7 10V8a5 5 0 0 1 10 0v2" />
+                <path d="M6.5 10h11A1.5 1.5 0 0 1 19 11.5v7A1.5 1.5 0 0 1 17.5 20h-11A1.5 1.5 0 0 1 5 18.5v-7A1.5 1.5 0 0 1 6.5 10Z" />
+              </svg>
+            </span>
+            <div class="trip-card-content">
+              <p class="trip-status">em breve</p>
+              <h3>Pr&oacute;xima<br />viagem</h3>
+              <span class="trip-pill">viagem bloqueada</span>
+            </div>
+          </button>
+
+          <button class="trip-card trip-card-locked trip-future-blue reveal" type="button" data-locked-trip>
+            <span class="trip-lock" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M7 10V8a5 5 0 0 1 10 0v2" />
+                <path d="M6.5 10h11A1.5 1.5 0 0 1 19 11.5v7A1.5 1.5 0 0 1 17.5 20h-11A1.5 1.5 0 0 1 5 18.5v-7A1.5 1.5 0 0 1 6.5 10Z" />
+              </svg>
+            </span>
+            <div class="trip-card-content">
+              <p class="trip-status">spoiler</p>
+              <h3>Novas<br />mem&oacute;rias</h3>
+              <span class="trip-pill">ainda bloqueada</span>
+            </div>
+          </button>
+
+          <button class="trip-card trip-card-locked trip-future-rose reveal" type="button" data-locked-trip>
+            <span class="trip-lock" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M7 10V8a5 5 0 0 1 10 0v2" />
+                <path d="M6.5 10h11A1.5 1.5 0 0 1 19 11.5v7A1.5 1.5 0 0 1 17.5 20h-11A1.5 1.5 0 0 1 5 18.5v-7A1.5 1.5 0 0 1 6.5 10Z" />
+              </svg>
+            </span>
+            <div class="trip-card-content">
+              <p class="trip-status">guardada</p>
+              <h3>Futuras<br />fotos</h3>
+              <span class="trip-pill">em breve</span>
+            </div>
+          </button>
+        </div>
+      </section>
+
+      <section class="favorites-section" id="favoritos" aria-labelledby="favorites-title">
+        <div class="section-intro reveal">
+          <p class="eyebrow">curtidas</p>
+          <h2 id="favorites-title">Selecionadas</h2>
+          <div class="memory-meta" aria-label="Total de fotos curtidas">
+            <span>total</span>
+            <strong id="favoritesTotal">0 fotos</strong>
+          </div>
+        </div>
+        <div class="favorites-grid" id="favoritesGrid"></div>
+      </section>
+
+      <footer class="closing">
+        <p>mural de viagem</p>
+        <div class="closing-signature" aria-label="Vai Corinthians">
+          <button class="closing-heart" id="closingHeart" type="button" aria-label="Abrir mensagem final">
+            &hearts;
+          </button>
+          <img src="./assets/timao/Corinthians_simbolo.png" alt="Corinthians" />
+          <strong>VAI CORINTHIANS</strong>
+        </div>
+      </footer>
+    </main>
+
+    <div class="closing-note" id="closingNote" role="dialog" aria-modal="true" aria-labelledby="closingNoteTitle" hidden>
+      <div class="closing-note-card">
+        <button class="closing-note-close" id="closingNoteClose" type="button" aria-label="Fechar mensagem">
+          &times;
+        </button>
+        <p class="eyebrow">mensagem final</p>
+        <h2 id="closingNoteTitle">Espero que tenha gostado</h2>
+        <p>
+          Espero que voc&ecirc; tenha gostado desse mural de fotos da viagem. N&atilde;o sou programador, mas tentei
+          fazer algo bonito para essa viagem nunca sair da sua cabe&ccedil;a.
+        </p>
+        <p>Ainda v&atilde;o ter muitas viagens para registrar aqui.</p>
+      </div>
+    </div>
+
+    <div class="trip-lock-message" id="tripLockMessage" role="dialog" aria-modal="true" aria-labelledby="tripLockTitle" hidden>
+      <div class="trip-lock-card">
+        <button class="trip-lock-close" id="tripLockClose" type="button" aria-label="Fechar aviso">
+          &times;
+        </button>
+        <span class="trip-lock-large" aria-hidden="true">
+          <svg viewBox="0 0 24 24" focusable="false">
+            <path d="M7 10V8a5 5 0 0 1 10 0v2" />
+            <path d="M6.5 10h11A1.5 1.5 0 0 1 19 11.5v7A1.5 1.5 0 0 1 17.5 20h-11A1.5 1.5 0 0 1 5 18.5v-7A1.5 1.5 0 0 1 6.5 10Z" />
+          </svg>
+        </span>
+        <p class="eyebrow">spoiler guardado</p>
+        <h2 id="tripLockTitle">Essa viagem ainda n&atilde;o foi desbloqueada.</h2>
+        <p>Quando uma nova viagem acontecer, ela aparece aqui com fotos, mem&oacute;rias e mais um mural inteiro.</p>
+      </div>
+    </div>
+
+    <div class="photo-lightbox" id="photoLightbox" role="dialog" aria-modal="true" aria-label="Foto ampliada" hidden>
+      <a class="lightbox-download" id="lightboxDownload" href="#" download aria-label="Baixar foto em HD" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M12 4v10" />
+          <path d="m8 10 4 4 4-4" />
+          <path d="M5 19h14" />
+        </svg>
+        <span>HD</span>
+      </a>
+      <button class="lightbox-close" id="lightboxClose" type="button" aria-label="Fechar foto">×</button>
+      <div class="lightbox-frame" id="lightboxFrame"></div>
+    </div>
+
+    <script src="./script.js?v=20260606-fotos-unificadas"></script>
+  </body>
+</html>

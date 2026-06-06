@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Fotos curtidas do mural de viagem."
+    />
+    <title>Site Viagem | Curtidas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=DM+Sans:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body data-page="favorites">
+    <nav class="floating-nav compact-nav" aria-label="Navegação principal">
+      <a class="nav-mark" href="./index.html#madrid" aria-label="Voltar para o mural">
+        mural de viagem
+      </a>
+      <div class="nav-links" aria-label="Cidades">
+        <a href="./index.html#madrid">Madrid</a>
+        <a href="./index.html#alicante">Alicante</a>
+        <a href="./index.html#amsterdam">Amsterdam</a>
+      </div>
+      <a
+        class="favorite-nav"
+        id="favoriteNav"
+        href="./favoritos.html"
+        aria-label="Curtidas"
+      >
+        <span aria-hidden="true">♥</span>
+        <span id="favoriteCount">0</span>
+      </a>
+    </nav>
+
+    <main class="favorites-page">
+      <section class="favorites-section" id="favoritos" aria-labelledby="favorites-title">
+        <div class="section-intro reveal">
+          <p class="eyebrow">curtidas</p>
+          <h1 id="favorites-title">Selecionadas</h1>
+        </div>
+        <div class="favorites-grid" id="favoritesGrid"></div>
+      </section>
+    </main>
+
+    <div class="photo-lightbox" id="photoLightbox" role="dialog" aria-modal="true" aria-label="Foto ampliada" hidden>
+      <button class="lightbox-close" id="lightboxClose" type="button" aria-label="Fechar foto">×</button>
+      <div class="lightbox-frame" id="lightboxFrame"></div>
+    </div>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
