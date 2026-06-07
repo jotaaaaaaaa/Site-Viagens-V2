@@ -7,8 +7,8 @@ function getEnv(name, fallback = "") {
 }
 
 function getSupabaseConfig() {
-  const url = getEnv("SUPABASE_URL").replace(/\/+$/, "");
-  const serviceKey = getEnv("SUPABASE_SERVICE_ROLE_KEY");
+  const url = getEnv("SUPABASE_URL", getEnv("NEXT_PUBLIC_SUPABASE_URL")).replace(/\/+$/, "");
+  const serviceKey = getEnv("SUPABASE_SERVICE_ROLE_KEY", getEnv("SUPABASE_SECRET_KEY"));
 
   if (!url || !serviceKey) {
     throw new Error("Supabase nao foi configurado nas variaveis da Vercel.");
