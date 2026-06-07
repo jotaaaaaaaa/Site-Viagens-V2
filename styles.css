@@ -1582,6 +1582,9 @@ button.trip-card {
   padding: 56px 22px 28px;
   background: rgba(12, 10, 9, 0.86);
   backdrop-filter: blur(18px);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .photo-lightbox[hidden] {
@@ -1614,6 +1617,9 @@ button.trip-card {
   object-fit: contain !important;
   border-radius: 7px;
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.32);
+  -webkit-user-drag: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .lightbox-frame .photo-fill {
@@ -1712,12 +1718,63 @@ button.trip-card {
   fill: none;
 }
 
+.lightbox-nav {
+  position: fixed;
+  top: 50%;
+  z-index: 72;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border: 1px solid rgba(255, 250, 240, 0.34);
+  border-radius: 50%;
+  color: #fffaf0;
+  background: rgba(255, 250, 240, 0.1);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition:
+    transform 180ms ease,
+    background 180ms ease,
+    border-color 180ms ease;
+}
+
+.lightbox-nav[hidden] {
+  display: none;
+}
+
+.lightbox-nav svg {
+  width: 25px;
+  height: 25px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.lightbox-prev {
+  left: 24px;
+}
+
+.lightbox-next {
+  right: 24px;
+}
+
 .lightbox-close:hover,
 .lightbox-close:focus-visible,
 .lightbox-download:hover,
-.lightbox-download:focus-visible {
+.lightbox-download:focus-visible,
+.lightbox-nav:hover,
+.lightbox-nav:focus-visible {
   transform: scale(1.04);
   background: rgba(255, 250, 240, 0.18);
+}
+
+.lightbox-nav:hover,
+.lightbox-nav:focus-visible {
+  transform: translateY(-50%) scale(1.04);
+  border-color: rgba(255, 250, 240, 0.52);
 }
 
 body.lightbox-open {
@@ -2350,6 +2407,33 @@ body.trip-modal-open {
     height: 44px;
     min-width: 60px;
     padding: 0 12px;
+  }
+
+  .lightbox-nav {
+    top: auto;
+    bottom: 18px;
+    width: 42px;
+    height: 42px;
+    transform: none;
+    background: rgba(255, 250, 240, 0.12);
+  }
+
+  .lightbox-nav:hover,
+  .lightbox-nav:focus-visible {
+    transform: scale(1.04);
+  }
+
+  .lightbox-nav svg {
+    width: 21px;
+    height: 21px;
+  }
+
+  .lightbox-prev {
+    left: 16px;
+  }
+
+  .lightbox-next {
+    right: 16px;
   }
 
   .lightbox-frame .photo-number {
