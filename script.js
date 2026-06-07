@@ -1,7 +1,8 @@
 const favoriteKey = "site-viagem-favoritos";
 const orderKey = "site-viagem-ordem-fotos";
 const customPhotosKey = "site-viagem-fotos-adicionadas";
-const cloudApiBase = window.location.protocol === "file:" ? "https://siteviagensv2.vercel.app" : "";
+const cloudApiHost = "siteviagensv2.vercel.app";
+const cloudApiBase = window.location.hostname && window.location.hostname !== cloudApiHost ? `https://${cloudApiHost}` : "";
 const cloudStateEndpoint = "/api/state";
 const cloudUploadEndpoint = "/api/upload-photo";
 const authSalt = "site-viagem-auth-v1-2026-06-05";
