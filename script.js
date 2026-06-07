@@ -1310,6 +1310,13 @@ function setupDragSorting() {
   document.addEventListener("pointermove", handleSortPointerMove, { passive: false });
   document.addEventListener("pointerup", finishSortDrag);
   document.addEventListener("pointercancel", finishSortDrag);
+  document.addEventListener("contextmenu", preventGalleryContextMenu);
+}
+
+function preventGalleryContextMenu(event) {
+  if (event.target.closest(".memory-card")) {
+    event.preventDefault();
+  }
 }
 
 function handleSortPointerDown(event) {
@@ -1340,6 +1347,10 @@ function handleSortPointerDown(event) {
     offsetY: event.clientY - rect.top,
     timer: null,
   };
+
+  if (event.pointerType === "touch") {
+    pendingDrag.timer = window.setTimeout(beginSortDrag, 260);
+  }
 }
 
 function handleSortPointerMove(event) {
@@ -1375,6 +1386,14 @@ function beginSortDrag() {
   const { card, grid, pointerId, offsetX, offsetY, startX, startY } = pendingDrag;
   window.clearTimeout(pendingDrag.timer);
   pendingDrag = null;
+  photoPress = null;
+  suppressPhotoOpen = true;
+
+  try {
+    card.setPointerCapture(pointerId);
+  } catch {
+    // Some browsers release capture during touch gestures; document listeners still handle the drag.
+  }
 
   dragState = {
     card,
@@ -1502,6 +1521,11 @@ function finishSortDrag(event) {
 
   const { card, grid } = dragState;
   const currentTransform = card.style.transform;
+  try {
+    card.releasePointerCapture(event.pointerId);
+  } catch {
+    // Pointer capture may already be gone when the browser cancels the touch.
+  }
   card.classList.remove("is-dragging");
   grid.classList.remove("is-sorting");
   document.body.classList.remove("is-dragging-gallery");
