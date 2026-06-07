@@ -1,6 +1,7 @@
 const favoriteKey = "site-viagem-favoritos";
 const orderKey = "site-viagem-ordem-fotos";
 const customPhotosKey = "site-viagem-fotos-adicionadas";
+const cloudApiBase = window.location.protocol === "file:" ? "https://siteviagensv2.vercel.app" : "";
 const cloudStateEndpoint = "/api/state";
 const cloudUploadEndpoint = "/api/upload-photo";
 const authSalt = "site-viagem-auth-v1-2026-06-05";
@@ -530,7 +531,7 @@ function unlockSite(gate) {
 }
 
 function canUseCloudSync() {
-  return window.location.protocol === "https:" || window.location.protocol === "http:";
+  return ["https:", "http:", "file:"].includes(window.location.protocol);
 }
 
 function enableCloudSync(passcode) {
@@ -553,7 +554,7 @@ async function requestCloud(path, options = {}) {
     return null;
   }
 
-  const response = await fetch(path, {
+  const response = await fetch(`${cloudApiBase}${path}`, {
     ...options,
     headers: {
       ...getJsonHeaders(),
