@@ -2209,7 +2209,7 @@ body.trip-modal-open {
 
 @media (max-width: 680px) {
   :root {
-    --nav-height: 68px;
+    --nav-height: 106px;
   }
 
   .password-gate {
@@ -2258,14 +2258,47 @@ body.trip-modal-open {
   }
 
   .floating-nav {
-    padding: 10px 14px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px 10px;
+    align-items: center;
+    padding: 9px 12px 10px;
+    background: linear-gradient(180deg, rgba(18, 16, 15, 0.82), rgba(18, 16, 15, 0.34) 72%, rgba(18, 16, 15, 0));
   }
 
   .nav-mark {
+    min-width: 0;
     font-size: 1.08rem;
+    line-height: 1;
   }
 
   .nav-links {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 4px;
+    border: 1px solid rgba(255, 250, 240, 0.2);
+    border-radius: 999px;
+    background: rgba(29, 23, 20, 0.24);
+    box-shadow: 0 12px 26px rgba(20, 12, 10, 0.14);
+    font-size: 0.6rem;
+    line-height: 1;
+    overflow: hidden;
+  }
+
+  .nav-links a {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 8px 6px;
+    border-radius: 999px;
+    background: rgba(255, 250, 240, 0.08);
+    text-align: center;
+    white-space: nowrap;
+    opacity: 0.92;
+  }
+
+  .nav-links a::after {
     display: none;
   }
 
