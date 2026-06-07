@@ -1,28 +1,35 @@
-# SITE VIAGEM
+# Site Viagens
 
-Landing page cinematografica para recordacoes de viagem por Madrid, Alicante e Amsterdam.
+Site de fotos da viagem Madrid, Alicante e Amsterdam, pronto para publicar na Vercel com Supabase salvando curtidas, ordem das fotos e fotos adicionadas.
 
-## Como abrir
+## O que fica salvo no Supabase
 
-Abra o arquivo `index.html` no navegador.
+- Fotos adicionadas pelo botao de cada cidade.
+- Curtidas/favoritos.
+- Ordem das fotos quando alguem arrasta no mural.
 
-## Onde trocar as fotos depois
+Ao abrir direto pelo arquivo `index.html`, o site continua funcionando com salvamento local no navegador. Ao publicar na Vercel e configurar as variaveis, ele passa a sincronizar pelo Supabase.
 
-Os placeholders estao no arquivo `script.js`, dentro do objeto `galleries`.
+## Passo a passo
 
-Para substituir um placeholder por uma foto real, troque o conteudo visual do card correspondente. A forma mais simples e criar uma pasta `assets/fotos` e ajustar cada item para usar uma imagem local no lugar do gradiente.
+1. Crie um projeto no Supabase.
+2. No Supabase, abra o SQL Editor e rode o arquivo `supabase/schema.sql`.
+3. No Vercel, importe este repositorio.
+4. No Vercel, adicione estas variaveis em Project Settings > Environment Variables:
 
-## Recursos prontos
+```txt
+SUPABASE_URL=https://seu-projeto.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=sua-service-role-key
+SUPABASE_STORAGE_BUCKET=site-viagem-fotos
+SITE_ACCESS_CODE=gatabrisa
+SITE_TRIP_ID=madrid-alicante-amsterdam-2026
+```
 
-- Seções hero para Madrid, Alicante e Amsterdam.
-- Galerias assimetricas com movimento suave.
-- Fotos podem ser seguradas e reorganizadas dentro de cada cidade.
-- Fotos podem ser ampliadas em foco com fundo escuro/desfocado.
-- Coracoes de favorito com animacao.
-- Contador fixo de favoritos.
-- Favoritos salvos no navegador.
-- Curtidas ficam na pagina `favoritos.html`.
-- Ordem das fotos salva no navegador.
-- Secao de favoritos com scroll suave.
-- Campo discreto preparado para passos por cidade.
-- Layout responsivo para celular, tablet e desktop.
+5. Faca o deploy.
+6. Depois de publicado, abra `https://seu-site.vercel.app/api/health`. Se aparecer `ok: true`, a parte do servidor esta configurada.
+
+## Importante
+
+Use a `service_role key` somente nas variaveis da Vercel. Nao coloque essa chave dentro de `script.js`, `index.html` ou qualquer arquivo publico.
+
+O bucket `site-viagem-fotos` fica publico para que as fotos carreguem no site, mas o upload passa pela API da Vercel e exige a senha configurada em `SITE_ACCESS_CODE`.

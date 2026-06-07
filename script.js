@@ -1,6 +1,8 @@
 const favoriteKey = "site-viagem-favoritos";
 const orderKey = "site-viagem-ordem-fotos";
 const customPhotosKey = "site-viagem-fotos-adicionadas";
+const cloudStateEndpoint = "/api/state";
+const cloudUploadEndpoint = "/api/upload-photo";
 const authSalt = "site-viagem-auth-v1-2026-06-05";
 const authIterations = 210000;
 const authHash = "TvMcNPwhy9+dNmcUk4MiIZC0+J7uhD+TQu8Wv6zlesE=";
@@ -360,6 +362,11 @@ let lastPhotoOpenAt = 0;
 let currentLightboxPhotoId = "";
 let lightboxSwipe = null;
 let suppressLightboxClick = false;
+let cloudSync = {
+  passcode: "",
+  applying: false,
+  saveTimer: 0,
+};
 
 function bytesToBase64(bytes) {
   let binary = "";
@@ -444,7 +451,9 @@ function setupPasswordGate() {
         message.textContent = "abrindo o mural...";
         message.classList.add("is-success");
         input.disabled = true;
+        enableCloudSync(password);
         unlockSite(gate);
+        syncSharedStateFromCloud();
         return;
       }
 
@@ -518,6 +527,188 @@ function unlockSite(gate) {
     gate.hidden = true;
     document.body.classList.remove("site-unlocking");
   }, 940);
+}
+
+function canUseCloudSync() {
+  return window.location.protocol === "https:" || window.location.protocol === "http:";
+}
+
+function enableCloudSync(passcode) {
+  if (!canUseCloudSync()) {
+    return;
+  }
+
+  cloudSync.passcode = passcode;
+}
+
+function getJsonHeaders() {
+  return {
+    "Content-Type": "application/json",
+    "x-site-passcode": cloudSync.passcode,
+  };
+}
+
+async function requestCloud(path, options = {}) {
+  if (!canUseCloudSync() || !cloudSync.passcode) {
+    return null;
+  }
+
+  const response = await fetch(path, {
+    ...options,
+    headers: {
+      ...getJsonHeaders(),
+      ...(options.headers || {}),
+    },
+  });
+
+  let payload = null;
+  const text = await response.text();
+
+  if (text) {
+    try {
+      payload = JSON.parse(text);
+    } catch {
+      payload = { message: text };
+    }
+  }
+
+  if (!response.ok) {
+    throw new Error(payload?.error || payload?.message || "Falha na sincronizacao.");
+  }
+
+  return payload;
+}
+
+function sanitizeStoredPhotos(value) {
+  return Object.fromEntries(
+    Object.keys(galleries).map((galleryKey) => [
+      galleryKey,
+      Array.isArray(value?.[galleryKey]) ? value[galleryKey].filter((photo) => photo?.id && photo?.src) : [],
+    ])
+  );
+}
+
+function sanitizeStoredFavorites(value) {
+  return Array.isArray(value) ? value.filter((id) => typeof id === "string") : [];
+}
+
+function sanitizeStoredOrder(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    Object.keys(galleries).map((galleryKey) => [
+      galleryKey,
+      Array.isArray(value[galleryKey]) ? value[galleryKey].filter((id) => typeof id === "string") : [],
+    ])
+  );
+}
+
+function hasSharedPhotos(photoCollections) {
+  return Object.values(photoCollections || {}).some((photos) => Array.isArray(photos) && photos.length);
+}
+
+function hasSharedOrder(order) {
+  return Object.values(order || {}).some((ids) => Array.isArray(ids) && ids.length);
+}
+
+function persistSharedStateLocally() {
+  localStorage.setItem(favoriteKey, JSON.stringify([...favorites]));
+  localStorage.setItem(orderKey, JSON.stringify(photoOrder));
+  saveCustomPhotos(customPhotos);
+}
+
+function rebuildGalleriesFromCustomPhotos() {
+  applyOfficialPhotos();
+  applyCustomPhotos();
+  refreshPhotoIndex();
+  renderGalleries();
+  syncHearts();
+  renderFavoritesPage();
+
+  Object.values(galleries).forEach((gallery) => {
+    const target = document.getElementById(gallery.target);
+    if (target) {
+      observeReveals(target);
+    }
+  });
+}
+
+function applySharedState(state) {
+  const remotePhotos = sanitizeStoredPhotos(state?.customPhotos);
+  const remoteFavorites = sanitizeStoredFavorites(state?.favorites);
+  const remoteOrder = sanitizeStoredOrder(state?.photoOrder);
+  const hasRemoteData = state?.exists || hasSharedPhotos(remotePhotos) || remoteFavorites.length || hasSharedOrder(remoteOrder);
+
+  cloudSync.applying = true;
+
+  if (hasRemoteData) {
+    customPhotos = remotePhotos;
+    favorites = new Set(remoteFavorites);
+    photoOrder = remoteOrder;
+  }
+
+  persistSharedStateLocally();
+  rebuildGalleriesFromCustomPhotos();
+  cloudSync.applying = false;
+
+  if (!hasRemoteData) {
+    scheduleSharedStateSave();
+  }
+}
+
+async function syncSharedStateFromCloud() {
+  if (!canUseCloudSync() || !cloudSync.passcode) {
+    return;
+  }
+
+  try {
+    const state = await requestCloud(cloudStateEndpoint);
+    applySharedState(state);
+  } catch (error) {
+    console.warn("Nao consegui carregar o salvamento compartilhado.", error);
+  }
+}
+
+function scheduleSharedStateSave() {
+  if (!canUseCloudSync() || !cloudSync.passcode || cloudSync.applying) {
+    return;
+  }
+
+  window.clearTimeout(cloudSync.saveTimer);
+  cloudSync.saveTimer = window.setTimeout(saveSharedStateToCloud, 520);
+}
+
+async function saveSharedStateToCloud() {
+  if (!canUseCloudSync() || !cloudSync.passcode || cloudSync.applying) {
+    return;
+  }
+
+  try {
+    await requestCloud(cloudStateEndpoint, {
+      method: "PATCH",
+      body: JSON.stringify({
+        favorites: [...favorites],
+        photoOrder,
+      }),
+    });
+  } catch (error) {
+    console.warn("Nao consegui salvar as mudancas no Supabase.", error);
+  }
+}
+
+async function savePhotoToCloud(galleryKey, photo, sortIndex) {
+  const payload = await requestCloud(cloudUploadEndpoint, {
+    method: "POST",
+    body: JSON.stringify({
+      galleryKey,
+      photo,
+      sortIndex,
+    }),
+  });
+
+  return payload?.photo || photo;
 }
 
 function collectAllPhotos() {
@@ -696,12 +887,13 @@ function readFileAsDataUrl(file) {
   });
 }
 
-function resizeImage(dataUrl) {
+function resizeImage(dataUrl, options = {}) {
   return new Promise((resolve, reject) => {
     const image = new Image();
 
     image.addEventListener("load", () => {
-      const maxSide = 1400;
+      const maxSide = options.maxSide || 1400;
+      const quality = options.quality || 0.78;
       const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
       const canvas = document.createElement("canvas");
       canvas.width = Math.max(1, Math.round(image.width * scale));
@@ -710,7 +902,7 @@ function resizeImage(dataUrl) {
       const context = canvas.getContext("2d");
       context.drawImage(image, 0, 0, canvas.width, canvas.height);
       resolve({
-        src: canvas.toDataURL("image/jpeg", 0.78),
+        src: canvas.toDataURL("image/jpeg", quality),
         width: canvas.width,
         height: canvas.height,
       });
@@ -723,11 +915,12 @@ function resizeImage(dataUrl) {
 
 async function prepareImage(file) {
   const dataUrl = await readFileAsDataUrl(file);
-  const resized = await resizeImage(dataUrl);
+  const resized = await resizeImage(dataUrl, { maxSide: 1400, quality: 0.78 });
+  const original = await resizeImage(dataUrl, { maxSide: 2400, quality: 0.9 });
 
   return {
     ...resized,
-    originalSrc: dataUrl,
+    originalSrc: original.src,
   };
 }
 
@@ -800,6 +993,7 @@ function readFavorites() {
 
 function saveFavorites() {
   localStorage.setItem(favoriteKey, JSON.stringify([...favorites]));
+  scheduleSharedStateSave();
 }
 
 function readPhotoOrder() {
@@ -813,6 +1007,7 @@ function readPhotoOrder() {
 
 function savePhotoOrder() {
   localStorage.setItem(orderKey, JSON.stringify(photoOrder));
+  scheduleSharedStateSave();
 }
 
 function getOrderedPhotos(galleryKey) {
@@ -1058,7 +1253,13 @@ async function addPhotosToGallery(files, galleryKey) {
 
     for (const [index, file] of files.entries()) {
       const src = await prepareImage(file);
-      photos.push(createUploadedPhoto(file, galleryKey, src, baseIndex + index));
+      const photo = createUploadedPhoto(file, galleryKey, src, baseIndex + index);
+
+      if (canUseCloudSync() && cloudSync.passcode) {
+        photos.push(await savePhotoToCloud(galleryKey, photo, baseIndex + index));
+      } else {
+        photos.push(photo);
+      }
     }
 
     const nextCustomPhotos = {
