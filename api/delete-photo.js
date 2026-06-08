@@ -30,8 +30,8 @@ function sanitizePhotoId(value) {
 }
 
 function validSecret(body) {
-  if (body.adminPassword) return safeEqual(sha256(body.adminPassword), adminPasswordHash);
-  return safeEqual(sha256(body.removePassword), removePasswordHash);
+  if (body.adminPassword) return safeEqual(sha256(String(body.adminPassword || "").trim()), adminPasswordHash);
+  return safeEqual(sha256(String(body.removePassword || "").trim()), removePasswordHash);
 }
 
 module.exports = async function handler(req, res) {

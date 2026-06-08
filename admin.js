@@ -35,7 +35,7 @@ function showLogin() {
 }
 
 async function login(password) {
-  const payload = await api("login", { password });
+  const payload = await api("login", { password: password.trim() });
   adminToken = payload.token;
   sessionStorage.setItem(tokenKey, adminToken);
   showDashboard();

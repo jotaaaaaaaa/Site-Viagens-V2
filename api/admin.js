@@ -211,7 +211,7 @@ module.exports = async function handler(req, res) {
     const action = clean(req.query?.action || body.action || "dashboard");
 
     if (req.method === "POST" && action === "login") {
-      if (!safeEqual(sha256(body.password), adminHash)) { sendError(res, 401, "Senha admin invalida."); return; }
+      if (!safeEqual(sha256(String(body.password || "").trim()), adminHash)) { sendError(res, 401, "Senha admin invalida."); return; }
       sendJson(res, 200, { ok: true, token: createToken() });
       return;
     }
