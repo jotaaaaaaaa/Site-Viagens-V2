@@ -11,6 +11,7 @@ const {
 } = require("./_shared");
 
 const removePasswordHash = "e9ee5ffc3639dc24442bdb7987c1db5f61803cc59bb836864d933b6a717731a7";
+const adminPasswordHash = "1d79af1962a63a1eaafc321f64ee18a999cfad3fa360ab18a0596a49e4d7d5c6";
 
 function sha256(value) {
   return crypto.createHash("sha256").update(String(value || "")).digest("hex");
@@ -24,10 +25,13 @@ function safeEqual(left, right) {
 
 function sanitizePhotoId(value) {
   const id = String(value || "").slice(0, 180);
-  if (!id) {
-    throw new Error("Foto invalida.");
-  }
+  if (!id) throw new Error("Foto invalida.");
   return id;
+}
+
+function validSecret(body) {
+  if (body.adminPassword) return safeEqual(sha256(body.adminPassword), adminPasswordHash);
+  return safeEqual(sha256(body.removePassword), removePasswordHash);
 }
 
 module.exports = async function handler(req, res) {
@@ -47,16 +51,15 @@ module.exports = async function handler(req, res) {
   try {
     const body = await readJsonBody(req);
 
-    if (!requirePasscode(req, res, body)) {
-      return;
-    }
+    if (!requirePasscode(req, res, body)) return;
 
-    if (!safeEqual(sha256(body.removePassword), removePasswordHash)) {
-      sendError(res, 401, "Senha de remocao invalida.");
+    if (!validSecret(body)) {
+      sendError(res, 401, "Senha invalida.");
       return;
     }
 
     const photoId = sanitizePhotoId(body.photoId);
+    const action = body.action === "restore" ? "restore" : "hide";
     const { tripId } = getSupabaseConfig();
     const encodedTripId = encodeURIComponent(tripId);
     const stateRows = await supabaseFetch(
@@ -66,21 +69,19 @@ module.exports = async function handler(req, res) {
     const currentOrder = sanitizePhotoOrder(state?.photo_order || {});
     const favorites = Array.isArray(state?.favorites) ? state.favorites.filter((id) => id !== photoId) : [];
     const hidden = new Set(currentOrder.__hidden || []);
-    hidden.add(photoId);
 
-    Object.keys(currentOrder).forEach((key) => {
-      if (Array.isArray(currentOrder[key])) {
-        currentOrder[key] = currentOrder[key].filter((id) => id !== photoId);
-      }
-    });
+    if (action === "restore") {
+      hidden.delete(photoId);
+    } else {
+      hidden.add(photoId);
+      Object.keys(currentOrder).forEach((key) => {
+        if (Array.isArray(currentOrder[key]) && key !== "__hidden") {
+          currentOrder[key] = currentOrder[key].filter((id) => id !== photoId);
+        }
+      });
+    }
+
     currentOrder.__hidden = [...hidden];
-
-    await supabaseFetch(`/rest/v1/custom_photos?id=eq.${encodeURIComponent(photoId)}&trip_id=eq.${encodedTripId}`, {
-      method: "DELETE",
-      headers: {
-        Prefer: "return=minimal",
-      },
-    });
 
     await supabaseFetch("/rest/v1/trip_state", {
       method: "POST",
@@ -98,8 +99,8 @@ module.exports = async function handler(req, res) {
       ]),
     });
 
-    sendJson(res, 200, { ok: true, hiddenPhotos: currentOrder.__hidden });
+    sendJson(res, 200, { ok: true, action, hiddenPhotos: currentOrder.__hidden });
   } catch (error) {
-    sendError(res, 500, error.message || "Nao consegui remover a foto.");
+    sendError(res, 500, error.message || "Nao consegui alterar a foto.");
   }
 };

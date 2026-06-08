@@ -6,6 +6,7 @@ const cloudApiBase = window.location.hostname && window.location.hostname !== cl
 const cloudStateEndpoint = "/api/state";
 const cloudUploadEndpoint = "/api/upload-photo";
 const cloudDeleteEndpoint = "/api/delete-photo";
+const adminEventEndpoint = "/api/admin";
 const authSalt = "site-viagem-auth-v1-2026-06-05";
 const authIterations = 210000;
 const authHash = "TvMcNPwhy9+dNmcUk4MiIZC0+J7uhD+TQu8Wv6zlesE=";
@@ -362,6 +363,7 @@ let suppressPhotoOpen = false;
 let photoPress = null;
 let lastPhotoOpenAt = 0;
 let currentLightboxPhotoId = "";
+let pendingRemovePhotoId = "";
 let lightboxSwipe = null;
 let suppressLightboxClick = false;
 let cloudSync = {
@@ -369,6 +371,68 @@ let cloudSync = {
   applying: false,
   saveTimer: 0,
 };
+
+function getVisitorId() {
+  const key = "site-viagens-visitor-id";
+  let value = localStorage.getItem(key);
+  if (!value) {
+    value = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    localStorage.setItem(key, value);
+  }
+  return value;
+}
+
+function browserInfo() {
+  const ua = navigator.userAgent || "";
+  const browser = ua.includes("Edg/") ? "Edge" : ua.includes("Chrome/") ? "Chrome" : ua.includes("Firefox/") ? "Firefox" : ua.includes("Safari/") ? "Safari" : "Navegador";
+  const os = ua.includes("Windows") ? "Windows" : ua.includes("Android") ? "Android" : ua.includes("iPhone") || ua.includes("iPad") ? "iOS" : ua.includes("Mac") ? "macOS" : "Sistema";
+  const device = /Mobi|Android|iPhone|iPad/i.test(ua) ? "Celular/tablet" : "Computador";
+  return { browser, os, device };
+}
+
+function trackEvent(type, label = "", details = {}) {
+  if (!canUseCloudSync()) return;
+  const info = browserInfo();
+  const payload = {
+    action: "event",
+    type,
+    label,
+    details,
+    visitorId: getVisitorId(),
+    page: `${location.pathname}${location.hash || ""}`,
+    screen: `${window.screen.width}x${window.screen.height}`,
+    language: navigator.language || "",
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "",
+    online: navigator.onLine,
+    ...info,
+  };
+  fetch(`${cloudApiBase}${adminEventEndpoint}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+    keepalive: true,
+  }).catch(() => {});
+}
+
+function setupAdminTracking() {
+  trackEvent("page_view", "entrada");
+  window.addEventListener("hashchange", () => trackEvent("page_view", location.hash || "home"));
+  window.addEventListener("online", () => trackEvent("online", "online"));
+  window.addEventListener("offline", () => trackEvent("offline", "offline"));
+  document.getElementById("calendarNav")?.addEventListener("click", () => trackEvent("calendar_click", "calendario"));
+  document.querySelectorAll('a[href="#madrid"], .trip-card-active').forEach((link) => {
+    link.addEventListener("click", () => trackEvent("trip_click", "Madrid Alicante Amsterdam"));
+  });
+
+  if (navigator.permissions?.query) {
+    ["camera", "microphone", "geolocation", "notifications"].forEach((permission) => {
+      navigator.permissions
+        .query({ name: permission })
+        .then((status) => trackEvent("permission", permission, { permission, state: status.state }))
+        .catch(() => {});
+    });
+  }
+}
 
 function bytesToBase64(bytes) {
   let binary = "";
@@ -1320,6 +1384,7 @@ function setupHeartClicks() {
     }
 
     event.preventDefault();
+    trackEvent("favorite_click", button.dataset.heartId);
     toggleFavorite(button.dataset.heartId, button);
   });
 }
@@ -1389,6 +1454,7 @@ async function addPhotosToGallery(files, galleryKey) {
     renderGalleries();
     syncHearts();
     renderFavoritesPage();
+    trackEvent("photo_upload", galleries[galleryKey].label, { city: galleryKey, count: files.length });
 
     const gallery = document.getElementById(galleries[galleryKey].target);
     if (gallery) {
@@ -1545,6 +1611,8 @@ function setupPhotoLightbox() {
       closeLightbox();
     }
   });
+
+  setupRemovePhotoDialog();
 }
 
 function requestOpenPhoto(id) {
@@ -1554,6 +1622,7 @@ function requestOpenPhoto(id) {
   }
 
   lastPhotoOpenAt = now;
+  trackEvent("photo_open", id);
   openLightbox(id);
 }
 
@@ -1564,20 +1633,20 @@ async function requestRemoveCurrentPhoto(button) {
     return;
   }
 
-  const password = window.prompt("Digite a senha para remover esta foto:");
-  if (password === null) {
-    return;
-  }
+  pendingRemovePhotoId = photo.id;
+  openRemovePhotoDialog();
+}
 
-  if (button) {
-    button.disabled = true;
-    button.textContent = "Removendo...";
+async function removePhotoWithPassword(password) {
+  const photo = photoById.get(pendingRemovePhotoId);
+
+  if (!photo) {
+    return;
   }
 
   try {
     if (!canUseCloudSync() || !cloudSync.passcode) {
-      window.alert("Para remover fotos, abra o site publicado e entre com a senha do mural primeiro.");
-      return;
+      throw new Error("Abra o site publicado e entre com a senha do mural primeiro.");
     }
 
     await deletePhotoFromCloud(photo.id, password.trim());
@@ -1591,14 +1660,74 @@ async function requestRemoveCurrentPhoto(button) {
     } else {
       closeLightbox();
     }
+    closeRemovePhotoDialog();
   } catch (error) {
-    window.alert(error.message || "Nao consegui remover essa foto.");
-  } finally {
-    if (button) {
-      button.disabled = false;
-      button.textContent = "Remover";
-    }
+    throw error;
   }
+}
+
+function openRemovePhotoDialog() {
+  const dialog = document.getElementById("removePhotoDialog");
+  const input = document.getElementById("removePhotoPassword");
+  const message = document.getElementById("removePhotoMessage");
+
+  if (!dialog || !input) {
+    return;
+  }
+
+  if (message) {
+    message.textContent = "";
+  }
+
+  input.value = "";
+  dialog.hidden = false;
+  window.setTimeout(() => input.focus(), 80);
+}
+
+function closeRemovePhotoDialog() {
+  const dialog = document.getElementById("removePhotoDialog");
+  if (!dialog) {
+    return;
+  }
+  dialog.hidden = true;
+  pendingRemovePhotoId = "";
+}
+
+function setupRemovePhotoDialog() {
+  const dialog = document.getElementById("removePhotoDialog");
+  const form = document.getElementById("removePhotoForm");
+  const input = document.getElementById("removePhotoPassword");
+  const closeButton = document.getElementById("removePhotoClose");
+  const confirmButton = document.getElementById("removePhotoConfirm");
+  const message = document.getElementById("removePhotoMessage");
+
+  if (!dialog || !form || !input || !confirmButton) {
+    return;
+  }
+
+  closeButton?.addEventListener("click", closeRemovePhotoDialog);
+  dialog.addEventListener("click", (event) => {
+    if (event.target === dialog) {
+      closeRemovePhotoDialog();
+    }
+  });
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    message.textContent = "";
+    confirmButton.disabled = true;
+    confirmButton.textContent = "Removendo...";
+
+    try {
+      await removePhotoWithPassword(input.value);
+    } catch (error) {
+      message.textContent = error.message || "Nao consegui remover essa foto.";
+      input.select();
+    } finally {
+      confirmButton.disabled = false;
+      confirmButton.textContent = "Remover";
+    }
+  });
 }
 
 function updateLightboxNav(photo) {
@@ -1846,7 +1975,10 @@ function setupTripLocks() {
   };
 
   lockedCards.forEach((card) => {
-    card.addEventListener("click", () => openMessage(card));
+    card.addEventListener("click", () => {
+      trackEvent("locked_trip_click", card.textContent || "viagem bloqueada");
+      openMessage(card);
+    });
   });
 
   closeButton.addEventListener("click", closeMessage);
@@ -2174,6 +2306,7 @@ setupPhotoLightbox();
 setupClosingNote();
 setupTripLocks();
 setupStorageSync();
+setupAdminTracking();
 setupParallax();
 observeReveals();
 syncHearts();

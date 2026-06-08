@@ -1,0 +1,56 @@
+﻿<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Admin | Mural de Viagem</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./admin.css?v=20260608-admin1" />
+  </head>
+  <body>
+    <section class="admin-login" id="adminLogin">
+      <form class="login-card" id="loginForm" autocomplete="off">
+        <p class="eyebrow">area privada</p>
+        <h1>Admin do mural</h1>
+        <p>Acompanhe acessos, interacoes, permissoes e controle quais fotos aparecem no site.</p>
+        <label for="adminPassword">Senha</label>
+        <div class="login-field">
+          <input id="adminPassword" type="password" required />
+          <button type="submit">Entrar</button>
+        </div>
+        <p class="message" id="loginMessage"></p>
+      </form>
+    </section>
+
+    <section class="dashboard" id="dashboard" hidden>
+      <aside class="sidebar">
+        <div class="brand"><span>MV</span><div><strong>Mural Admin</strong><small>site viagens v2</small></div></div>
+        <nav class="tabs">
+          <button class="active" data-tab="overview">Visao geral</button>
+          <button data-tab="visitors">Visitantes</button>
+          <button data-tab="permissions">Permissoes</button>
+          <button data-tab="photos">Fotos</button>
+          <button data-tab="activity">Atividade</button>
+          <button data-tab="interactions">Cliques</button>
+          <button data-tab="settings">Config</button>
+        </nav>
+        <button class="logout" id="logoutButton">Sair</button>
+      </aside>
+      <main class="main">
+        <header class="topbar"><div><p class="eyebrow">dashboard</p><h2>Painel administrativo</h2></div><button id="refreshButton">Atualizar</button></header>
+        <section class="view active" data-view="overview"><div class="metrics" id="metrics"></div><div class="grid2"><article class="card"><h3>Atividade recente</h3><div class="timeline" id="overviewTimeline"></div></article><article class="card"><h3>Visitantes recentes</h3><div id="visitorCards"></div></article></div></section>
+        <section class="view" data-view="visitors"><article class="card wide"><h3>Visitantes</h3><div class="table-wrap"><table><thead><tr><th>Ultimo acesso</th><th>Pagina</th><th>Dispositivo</th><th>Navegador</th><th>Sistema</th><th>Tela</th><th>Idioma</th><th>IP aprox.</th><th>Local</th><th>Status</th></tr></thead><tbody id="visitorsTable"></tbody></table></div></article></section>
+        <section class="view" data-view="permissions"><article class="card wide"><h3>Permissoes</h3><div class="table-wrap"><table><thead><tr><th>Data</th><th>Permissao</th><th>Status</th><th>Pagina</th><th>Visitante</th></tr></thead><tbody id="permissionsTable"></tbody></table></div></article></section>
+        <section class="view" data-view="photos"><article class="card wide"><div class="heading"><h3>Fotos do mural</h3><span>Ocultar remove do site. Restaurar devolve para a cidade correta.</span></div><div class="photos" id="photosGrid"></div></article></section>
+        <section class="view" data-view="activity"><article class="card wide"><h3>Atividade recente</h3><div class="timeline" id="activityTimeline"></div></article></section>
+        <section class="view" data-view="interactions"><article class="card wide"><h3>Cliques e interacoes</h3><div class="table-wrap"><table><thead><tr><th>Data</th><th>Evento</th><th>Detalhe</th><th>Pagina</th><th>Visitante</th></tr></thead><tbody id="interactionsTable"></tbody></table></div></article></section>
+        <section class="view" data-view="settings"><div class="grid2"><article class="card"><h3>Status</h3><dl id="systemList"></dl></article><article class="card danger"><h3>Admin</h3><button id="clearButton">Limpar dados de teste</button><button id="settingsLogout">Sair do admin</button><p>Nao capturamos camera, microfone ou localizacao escondido. O painel registra apenas dados permitidos e aproximados.</p></article></div></section>
+      </main>
+    </section>
+    <div class="photo-modal" id="photoModal" hidden><button id="photoClose">×</button><img id="photoImage" alt="Foto ampliada" /></div>
+    <script src="./admin.js?v=20260608-admin1"></script>
+  </body>
+</html>

@@ -1896,6 +1896,123 @@ body.lightbox-open {
   overflow: hidden;
 }
 
+.remove-photo-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 94;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  color: #fffaf0;
+  background: rgba(12, 10, 9, 0.78);
+  backdrop-filter: blur(14px);
+}
+
+.remove-photo-dialog[hidden] {
+  display: none;
+}
+
+.remove-photo-card {
+  position: relative;
+  width: min(440px, 100%);
+  padding: 32px 28px 28px;
+  border: 1px solid rgba(255, 250, 240, 0.22);
+  border-radius: 8px;
+  background:
+    linear-gradient(145deg, rgba(43, 62, 68, 0.96), rgba(24, 18, 17, 0.98)),
+    #151a1e;
+  box-shadow: 0 38px 110px rgba(0, 0, 0, 0.44);
+  animation: noteIn 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.remove-photo-card .eyebrow {
+  margin: 0 0 10px;
+  color: rgba(243, 208, 138, 0.78);
+}
+
+.remove-photo-card h2 {
+  margin: 0 44px 12px 0;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: clamp(1.8rem, 6vw, 2.4rem);
+  line-height: 1;
+}
+
+.remove-photo-card p {
+  margin: 0 0 18px;
+  color: rgba(248, 239, 226, 0.72);
+  line-height: 1.62;
+}
+
+.remove-photo-card label {
+  display: block;
+  margin-bottom: 8px;
+  color: rgba(248, 239, 226, 0.72);
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.remove-photo-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.remove-photo-field input {
+  min-height: 46px;
+  border: 1px solid rgba(255, 250, 240, 0.22);
+  border-radius: 7px;
+  padding: 0 13px;
+  color: #fffaf0;
+  background: rgba(255, 250, 240, 0.08);
+  font: inherit;
+  outline: none;
+}
+
+.remove-photo-field input:focus {
+  border-color: rgba(243, 208, 138, 0.72);
+  box-shadow: 0 0 0 4px rgba(243, 208, 138, 0.14);
+}
+
+.remove-photo-field button,
+.remove-photo-close {
+  border: 1px solid rgba(255, 250, 240, 0.2);
+  color: #fffaf0;
+  background: rgba(255, 250, 240, 0.09);
+  cursor: pointer;
+}
+
+.remove-photo-field button {
+  min-height: 46px;
+  border-color: rgba(255, 154, 170, 0.44);
+  border-radius: 7px;
+  padding: 0 16px;
+  background: rgba(178, 74, 85, 0.28);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.remove-photo-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.remove-photo-message {
+  min-height: 20px;
+  margin: 14px 0 0 !important;
+  color: #ff9aaa !important;
+  font-weight: 700;
+}
+
 body.note-open {
   overflow: hidden;
 }
