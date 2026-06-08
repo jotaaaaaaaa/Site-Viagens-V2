@@ -481,12 +481,13 @@ async function verifyPassword(password) {
 
 function shuffledPhotosForGate() {
   const photos = allPhotos.filter((photo) => photo.src);
+  const maxPhotos = window.matchMedia("(max-width: 720px)").matches ? 9 : 14;
 
   return [...photos]
     .map((photo) => ({ photo, sort: Math.random() }))
     .sort((a, b) => a.sort - b.sort)
     .map(({ photo }) => photo)
-    .slice(0, 28);
+    .slice(0, maxPhotos);
 }
 
 function createGateStreamPhoto(photo, index) {
@@ -513,15 +514,16 @@ function setupGatePhotoStream() {
   }
 
   const photos = shuffledPhotosForGate();
-  const columnCount = window.matchMedia("(max-width: 720px)").matches ? 3 : 4;
-  const photosPerColumn = Math.max(5, Math.ceil(photos.length / columnCount));
+  const isMobileGate = window.matchMedia("(max-width: 720px)").matches;
+  const columnCount = isMobileGate ? 2 : 3;
+  const photosPerColumn = Math.max(isMobileGate ? 4 : 5, Math.ceil(photos.length / columnCount));
   stream.innerHTML = "";
 
   for (let columnIndex = 0; columnIndex < columnCount; columnIndex += 1) {
     const column = document.createElement("div");
     column.className = "gate-photo-column";
-    column.style.setProperty("--stream-duration", `${42 + columnIndex * 6}s`);
-    column.style.setProperty("--stream-duration-alt", `${48 + columnIndex * 7}s`);
+    column.style.setProperty("--stream-duration", `${58 + columnIndex * 9}s`);
+    column.style.setProperty("--stream-duration-alt", `${66 + columnIndex * 9}s`);
 
     const columnPhotos = photos.slice(columnIndex * photosPerColumn, (columnIndex + 1) * photosPerColumn);
     const loopPhotos = [...columnPhotos, ...columnPhotos];
