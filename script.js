@@ -415,6 +415,61 @@ async function verifyPassword(password) {
   return timingSafeEqual(candidateHash, authHash);
 }
 
+function shuffledPhotosForGate() {
+  const photos = allPhotos.filter((photo) => photo.src);
+
+  return [...photos]
+    .map((photo) => ({ photo, sort: Math.random() }))
+    .sort((a, b) => a.sort - b.sort)
+    .map(({ photo }) => photo)
+    .slice(0, 28);
+}
+
+function createGateStreamPhoto(photo, index) {
+  const frame = document.createElement("span");
+  frame.className = `gate-stream-photo ${index % 5 === 0 ? "is-wide" : index % 4 === 0 ? "is-tall" : ""}`.trim();
+
+  const image = document.createElement("img");
+  image.src = photo.src;
+  image.alt = "";
+  image.loading = "lazy";
+  image.decoding = "async";
+  image.draggable = false;
+  image.setAttribute("aria-hidden", "true");
+
+  frame.appendChild(image);
+  return frame;
+}
+
+function setupGatePhotoStream() {
+  const stream = document.getElementById("gatePhotoStream");
+
+  if (!stream) {
+    return;
+  }
+
+  const photos = shuffledPhotosForGate();
+  const columnCount = window.matchMedia("(max-width: 720px)").matches ? 3 : 4;
+  const photosPerColumn = Math.max(5, Math.ceil(photos.length / columnCount));
+  stream.innerHTML = "";
+
+  for (let columnIndex = 0; columnIndex < columnCount; columnIndex += 1) {
+    const column = document.createElement("div");
+    column.className = "gate-photo-column";
+    column.style.setProperty("--stream-duration", `${42 + columnIndex * 6}s`);
+    column.style.setProperty("--stream-duration-alt", `${48 + columnIndex * 7}s`);
+
+    const columnPhotos = photos.slice(columnIndex * photosPerColumn, (columnIndex + 1) * photosPerColumn);
+    const loopPhotos = [...columnPhotos, ...columnPhotos];
+
+    loopPhotos.forEach((photo, photoIndex) => {
+      column.appendChild(createGateStreamPhoto(photo, photoIndex + columnIndex));
+    });
+
+    stream.appendChild(column);
+  }
+}
+
 function setupPasswordGate() {
   const gate = document.getElementById("passwordGate");
   const form = document.getElementById("passwordForm");
@@ -429,6 +484,7 @@ function setupPasswordGate() {
     return;
   }
 
+  setupGatePhotoStream();
   setupGateImageFallbacks();
   next?.addEventListener("click", () => {
     const slides = [...document.querySelectorAll("[data-gate-slide]")];

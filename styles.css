@@ -89,6 +89,7 @@ body.site-unlocked main {
 .password-gate::before {
   position: absolute;
   inset: 0;
+  z-index: 1;
   content: "";
   opacity: 0.16;
   background-image:
@@ -100,12 +101,73 @@ body.site-unlocked main {
 
 .password-gate::after {
   position: absolute;
-  left: 8vw;
-  right: 8vw;
-  bottom: 8vh;
-  height: 1px;
+  inset: 0;
+  z-index: 1;
   content: "";
-  background: linear-gradient(90deg, transparent, rgba(255, 250, 240, 0.4), transparent);
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(18, 16, 15, 0.36), rgba(18, 16, 15, 0.78) 58%, rgba(10, 11, 12, 0.9) 100%),
+    linear-gradient(180deg, rgba(10, 12, 14, 0.22), rgba(10, 12, 14, 0.74));
+}
+
+.gate-photo-stream {
+  position: absolute;
+  inset: -18vh -10vw;
+  z-index: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(170px, 1fr));
+  gap: clamp(14px, 2.4vw, 30px);
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  opacity: 0.74;
+  filter: blur(3.5px) saturate(0.95) brightness(0.82);
+  transform: rotate(-5deg) scale(1.08);
+}
+
+.gate-photo-column {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(14px, 2.4vw, 30px);
+  animation: gatePhotoStreamUp var(--stream-duration, 44s) linear infinite;
+  will-change: transform;
+}
+
+.gate-photo-column:nth-child(even) {
+  animation-name: gatePhotoStreamDown;
+  animation-duration: var(--stream-duration-alt, 52s);
+  transform: translateY(-50%);
+}
+
+.gate-stream-photo {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border: 1px solid rgba(255, 250, 240, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 250, 240, 0.08);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+}
+
+.gate-stream-photo.is-wide {
+  aspect-ratio: 5 / 3.6;
+}
+
+.gate-stream-photo.is-tall {
+  aspect-ratio: 3.5 / 5;
+}
+
+.gate-stream-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  -webkit-user-drag: none;
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: none;
 }
 
 .password-gate[hidden] {
@@ -114,7 +176,7 @@ body.site-unlocked main {
 
 .gate-panel {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   width: min(440px, 100%);
   padding: 38px 30px 30px;
   border: 1px solid rgba(255, 250, 240, 0.22);
@@ -2038,6 +2100,24 @@ body.trip-modal-open {
   }
 }
 
+@keyframes gatePhotoStreamUp {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(0, -50%, 0);
+  }
+}
+
+@keyframes gatePhotoStreamDown {
+  from {
+    transform: translate3d(0, -50%, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
 @keyframes gateArrowPulse {
   0%,
   100% {
@@ -2222,6 +2302,19 @@ body.trip-modal-open {
 @media (max-width: 680px) {
   :root {
     --nav-height: 106px;
+  }
+
+  .gate-photo-stream {
+    inset: -14vh -24vw;
+    grid-template-columns: repeat(3, minmax(118px, 1fr));
+    gap: 14px;
+    opacity: 0.62;
+    filter: blur(3px) saturate(0.9) brightness(0.76);
+    transform: rotate(-7deg) scale(1.12);
+  }
+
+  .gate-photo-column {
+    gap: 14px;
   }
 
   .password-gate {
