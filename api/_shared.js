@@ -117,7 +117,10 @@ function sanitizePhotoOrder(value) {
   }
 
   return Object.fromEntries(
-    [...validGalleryKeys].map((galleryKey) => [galleryKey, sanitizeStringList(value[galleryKey], 2000)])
+    [
+      ...[...validGalleryKeys].map((galleryKey) => [galleryKey, sanitizeStringList(value[galleryKey], 2000)]),
+      ["__hidden", sanitizeStringList(value.__hidden, 4000)],
+    ]
   );
 }
 

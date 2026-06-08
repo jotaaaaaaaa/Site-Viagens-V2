@@ -5,6 +5,7 @@ const cloudApiHost = "siteviagensv2.vercel.app";
 const cloudApiBase = window.location.hostname && window.location.hostname !== cloudApiHost ? `https://${cloudApiHost}` : "";
 const cloudStateEndpoint = "/api/state";
 const cloudUploadEndpoint = "/api/upload-photo";
+const cloudDeleteEndpoint = "/api/delete-photo";
 const authSalt = "site-viagem-auth-v1-2026-06-05";
 const authIterations = 210000;
 const authHash = "TvMcNPwhy9+dNmcUk4MiIZC0+J7uhD+TQu8Wv6zlesE=";
@@ -350,11 +351,10 @@ applyOfficialPhotos();
 let customPhotos = readCustomPhotos();
 applyCustomPhotos();
 
-let allPhotos = collectAllPhotos();
-let photoById = new Map(allPhotos.map((photo) => [photo.id, photo]));
-
 let favorites = readFavorites();
 let photoOrder = readPhotoOrder();
+let allPhotos = collectAllPhotos();
+let photoById = new Map(allPhotos.map((photo) => [photo.id, photo]));
 let revealObserver;
 let pendingDrag = null;
 let dragState = null;
@@ -655,12 +655,15 @@ function sanitizeStoredOrder(value) {
     return {};
   }
 
-  return Object.fromEntries(
+  return {
+    ...Object.fromEntries(
     Object.keys(galleries).map((galleryKey) => [
       galleryKey,
       Array.isArray(value[galleryKey]) ? value[galleryKey].filter((id) => typeof id === "string") : [],
     ])
-  );
+    ),
+    __hidden: Array.isArray(value.__hidden) ? value.__hidden.filter((id) => typeof id === "string") : [],
+  };
 }
 
 function hasSharedPhotos(photoCollections) {
@@ -770,8 +773,11 @@ async function savePhotoToCloud(galleryKey, photo, sortIndex) {
 }
 
 function collectAllPhotos() {
+  const hidden = getHiddenPhotoIds();
   return Object.entries(galleries).flatMap(([galleryKey, gallery]) =>
-    gallery.photos.map((photo) => ({ ...photo, city: gallery.label, cityKey: galleryKey }))
+    gallery.photos
+      .filter((photo) => !hidden.has(photo.id))
+      .map((photo) => ({ ...photo, city: gallery.label, cityKey: galleryKey }))
   );
 }
 
@@ -1068,8 +1074,59 @@ function savePhotoOrder() {
   scheduleSharedStateSave();
 }
 
+function getHiddenPhotoIds() {
+  return new Set(Array.isArray(photoOrder?.__hidden) ? photoOrder.__hidden : []);
+}
+
+function hidePhotoId(id) {
+  const hidden = getHiddenPhotoIds();
+  hidden.add(id);
+  photoOrder.__hidden = [...hidden];
+
+  Object.keys(galleries).forEach((galleryKey) => {
+    if (Array.isArray(photoOrder[galleryKey])) {
+      photoOrder[galleryKey] = photoOrder[galleryKey].filter((photoId) => photoId !== id);
+    }
+  });
+}
+
+async function deletePhotoFromCloud(photoId, removePassword) {
+  const payload = await requestCloud(cloudDeleteEndpoint, {
+    method: "POST",
+    body: JSON.stringify({
+      photoId,
+      removePassword,
+    }),
+  });
+
+  return payload;
+}
+
+function removePhotoLocally(photoId) {
+  const photo = photoById.get(photoId);
+  if (!photo) {
+    return;
+  }
+
+  hidePhotoId(photoId);
+  favorites.delete(photoId);
+
+  if (photo.custom && customPhotos[photo.cityKey]) {
+    customPhotos = {
+      ...customPhotos,
+      [photo.cityKey]: customPhotos[photo.cityKey].filter((item) => item.id !== photoId),
+    };
+    saveCustomPhotos(customPhotos);
+  }
+
+  localStorage.setItem(favoriteKey, JSON.stringify([...favorites]));
+  savePhotoOrder();
+  rebuildGalleriesFromCustomPhotos();
+}
+
 function getOrderedPhotos(galleryKey) {
-  const photos = galleries[galleryKey].photos;
+  const hidden = getHiddenPhotoIds();
+  const photos = galleries[galleryKey].photos.filter((photo) => !hidden.has(photo.id));
   const savedOrder = Array.isArray(photoOrder[galleryKey]) ? photoOrder[galleryKey] : [];
   const savedRank = new Map(savedOrder.map((id, index) => [id, index]));
   const defaultRank = new Map(photos.map((photo, index) => [photo.id, index]));
@@ -1352,6 +1409,7 @@ function setupPhotoLightbox() {
   const closeButton = document.getElementById("lightboxClose");
   const prevButton = document.getElementById("lightboxPrev");
   const nextButton = document.getElementById("lightboxNext");
+  const removeButton = document.getElementById("lightboxRemove");
 
   if (!lightbox || !closeButton) {
     return;
@@ -1465,6 +1523,11 @@ function setupPhotoLightbox() {
     navigateLightbox(1);
   });
 
+  removeButton?.addEventListener("click", async (event) => {
+    event.stopPropagation();
+    await requestRemoveCurrentPhoto(removeButton);
+  });
+
   lightbox.addEventListener("pointerdown", startLightboxSwipe);
   lightbox.addEventListener("pointermove", moveLightboxSwipe);
   lightbox.addEventListener("pointerup", finishLightboxSwipe);
@@ -1492,6 +1555,50 @@ function requestOpenPhoto(id) {
 
   lastPhotoOpenAt = now;
   openLightbox(id);
+}
+
+async function requestRemoveCurrentPhoto(button) {
+  const photo = photoById.get(currentLightboxPhotoId);
+
+  if (!photo) {
+    return;
+  }
+
+  const password = window.prompt("Digite a senha para remover esta foto:");
+  if (password === null) {
+    return;
+  }
+
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Removendo...";
+  }
+
+  try {
+    if (!canUseCloudSync() || !cloudSync.passcode) {
+      window.alert("Para remover fotos, abra o site publicado e entre com a senha do mural primeiro.");
+      return;
+    }
+
+    await deletePhotoFromCloud(photo.id, password.trim());
+
+    const currentPhoto = photoById.get(photo.id);
+    const nextPhoto = currentPhoto ? getLightboxPhotoList(currentPhoto).find((item) => item.id !== photo.id) : null;
+    removePhotoLocally(photo.id);
+
+    if (nextPhoto && photoById.has(nextPhoto.id)) {
+      renderLightboxPhoto(photoById.get(nextPhoto.id));
+    } else {
+      closeLightbox();
+    }
+  } catch (error) {
+    window.alert(error.message || "Nao consegui remover essa foto.");
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Remover";
+    }
+  }
 }
 
 function updateLightboxNav(photo) {
@@ -1599,7 +1706,7 @@ function startLightboxSwipe(event) {
     return;
   }
 
-  if (event.target.closest?.(".lightbox-close, .lightbox-download, .lightbox-nav")) {
+  if (event.target.closest?.(".lightbox-close, .lightbox-download, .lightbox-remove, .lightbox-nav")) {
     return;
   }
 

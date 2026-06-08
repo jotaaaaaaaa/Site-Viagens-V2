@@ -1791,6 +1791,36 @@ button.trip-card {
   display: none;
 }
 
+.lightbox-remove {
+  position: fixed;
+  top: 22px;
+  right: 164px;
+  z-index: 72;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  padding: 0 16px;
+  border: 1px solid rgba(255, 154, 170, 0.44);
+  border-radius: 999px;
+  color: #fffaf0;
+  background: rgba(178, 74, 85, 0.22);
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition:
+    transform 180ms ease,
+    background 180ms ease,
+    opacity 180ms ease;
+}
+
+.lightbox-remove:disabled {
+  cursor: wait;
+  opacity: 0.64;
+}
+
 .lightbox-download svg {
   width: 17px;
   height: 17px;
@@ -1848,6 +1878,8 @@ button.trip-card {
 .lightbox-close:focus-visible,
 .lightbox-download:hover,
 .lightbox-download:focus-visible,
+.lightbox-remove:hover,
+.lightbox-remove:focus-visible,
 .lightbox-nav:hover,
 .lightbox-nav:focus-visible {
   transform: scale(1.04);
@@ -2554,6 +2586,14 @@ body.trip-modal-open {
     height: 44px;
     min-width: 60px;
     padding: 0 12px;
+  }
+
+  .lightbox-remove {
+    top: 70px;
+    right: 14px;
+    height: 40px;
+    padding: 0 12px;
+    font-size: 0.66rem;
   }
 
   .lightbox-nav {
