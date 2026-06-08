@@ -32,7 +32,7 @@ function secret() {
 }
 
 function createToken() {
-  const expiresAt = Date.now() + 1000 * 60 * 60 * 8;
+  const expiresAt = Date.now() + 1000 * 60 * 30;
   const nonce = crypto.randomBytes(12).toString("hex");
   const payload = `${expiresAt}.${nonce}`;
   const sig = crypto.createHmac("sha256", secret()).update(payload).digest("hex");
@@ -104,6 +104,7 @@ function sanitizeEvent(body, req) {
     type: clean(body.type, "page_view").slice(0, 80),
     label: clean(body.label),
     visitorId: clean(body.visitorId, "visitante").slice(0, 90),
+    userName: clean(body.userName || details.userName || body.label || ""),
     page: clean(body.page || req.headers.referer || "/"),
     device: clean(body.device),
     browser: clean(body.browser),
@@ -130,6 +131,7 @@ function addEvent(data, event) {
     screen: event.screen,
     language: event.language,
     timezone: event.timezone,
+    userName: event.userName || visitor.userName || "",
     ip: event.ip,
     geo: event.geo,
     online: event.online,
@@ -139,6 +141,16 @@ function addEvent(data, event) {
   data.events = data.events.slice(-maxEvents);
   data.visitors = Object.fromEntries(Object.entries(data.visitors).sort((a, b) => String(b[1].lastSeenAt).localeCompare(String(a[1].lastSeenAt))).slice(0, maxVisitors));
   data.updatedAt = new Date().toISOString();
+}
+
+async function recordAdminLogin(body, req, success) {
+  try {
+    const data = await readAnalytics();
+    addEvent(data, sanitizeEvent({ ...body, type: success ? "admin_login_success" : "admin_login_failed", label: clean(body.userName || "sem nome") }, req));
+    await writeAnalytics(data);
+  } catch {
+    // O login nao deve depender do registro de auditoria estar disponivel.
+  }
 }
 
 async function readSiteState() {
@@ -211,7 +223,12 @@ module.exports = async function handler(req, res) {
     const action = clean(req.query?.action || body.action || "dashboard");
 
     if (req.method === "POST" && action === "login") {
-      if (!safeEqual(sha256(String(body.password || "").trim()), adminHash)) { sendError(res, 401, "Senha admin invalida."); return; }
+      if (!safeEqual(sha256(String(body.password || "").trim()), adminHash)) {
+        await recordAdminLogin(body, req, false);
+        sendError(res, 401, "Senha admin invalida.");
+        return;
+      }
+      await recordAdminLogin(body, req, true);
       sendJson(res, 200, { ok: true, token: createToken() });
       return;
     }

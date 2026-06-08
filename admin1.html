@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./admin.css?v=20260608-admin1" />
+    <link rel="stylesheet" href="./admin.css?v=20260608-secure-admin" />
   </head>
   <body>
     <section class="admin-login" id="adminLogin">
@@ -16,9 +16,11 @@
         <p class="eyebrow">area privada</p>
         <h1>Admin do mural</h1>
         <p>Acompanhe acessos, interacoes, permissoes e controle quais fotos aparecem no site.</p>
+        <label for="adminUserName">Nome</label>
+        <input class="login-input" id="adminUserName" type="text" autocomplete="off" placeholder="Seu nome" required />
         <label for="adminPassword">Senha</label>
         <div class="login-field">
-          <input id="adminPassword" type="password" required />
+          <input id="adminPassword" type="password" autocomplete="off" required />
           <button type="submit">Entrar</button>
         </div>
         <p class="message" id="loginMessage"></p>
@@ -42,7 +44,7 @@
       <main class="main">
         <header class="topbar"><div><p class="eyebrow">dashboard</p><h2>Painel administrativo</h2></div><button id="refreshButton">Atualizar</button></header>
         <section class="view active" data-view="overview"><div class="metrics" id="metrics"></div><div class="grid2"><article class="card"><h3>Atividade recente</h3><div class="timeline" id="overviewTimeline"></div></article><article class="card"><h3>Visitantes recentes</h3><div id="visitorCards"></div></article></div></section>
-        <section class="view" data-view="visitors"><article class="card wide"><h3>Visitantes</h3><div class="table-wrap"><table><thead><tr><th>Ultimo acesso</th><th>Pagina</th><th>Dispositivo</th><th>Navegador</th><th>Sistema</th><th>Tela</th><th>Idioma</th><th>IP aprox.</th><th>Local</th><th>Status</th></tr></thead><tbody id="visitorsTable"></tbody></table></div></article></section>
+        <section class="view" data-view="visitors"><article class="card wide"><h3>Visitantes</h3><div class="table-wrap"><table><thead><tr><th>Ultimo acesso</th><th>Usuario</th><th>Pagina</th><th>Dispositivo</th><th>Navegador</th><th>Sistema</th><th>Tela</th><th>Idioma</th><th>IP aprox.</th><th>Local</th><th>Status</th></tr></thead><tbody id="visitorsTable"></tbody></table></div></article></section>
         <section class="view" data-view="permissions"><article class="card wide"><h3>Permissoes</h3><div class="table-wrap"><table><thead><tr><th>Data</th><th>Permissao</th><th>Status</th><th>Pagina</th><th>Visitante</th></tr></thead><tbody id="permissionsTable"></tbody></table></div></article></section>
         <section class="view" data-view="photos"><article class="card wide"><div class="heading"><h3>Fotos do mural</h3><span>Ocultar remove do site. Restaurar devolve para a cidade correta.</span></div><div class="photos" id="photosGrid"></div></article></section>
         <section class="view" data-view="activity"><article class="card wide"><h3>Atividade recente</h3><div class="timeline" id="activityTimeline"></div></article></section>
@@ -51,6 +53,6 @@
       </main>
     </section>
     <div class="photo-modal" id="photoModal" hidden><button id="photoClose">×</button><img id="photoImage" alt="Foto ampliada" /></div>
-    <script src="./admin.js?v=20260608-admin1"></script>
+    <script src="./admin.js?v=20260608-secure-admin"></script>
   </body>
 </html>

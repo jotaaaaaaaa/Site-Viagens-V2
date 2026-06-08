@@ -1,7 +1,6 @@
 const adminEndpoint = "/api/admin";
-const tokenKey = "site-viagens-admin-token";
 const apiBase = location.hostname && location.hostname !== "siteviagensv2.vercel.app" ? "https://siteviagensv2.vercel.app" : "";
-let adminToken = sessionStorage.getItem(tokenKey) || "";
+let adminToken = "";
 let dashboardData = null;
 
 const $ = (selector) => document.querySelector(selector);
@@ -24,6 +23,49 @@ async function api(action, body = {}, method = "POST") {
   return payload;
 }
 
+function adminVisitorId() {
+  const key = "site-viagens-admin-visitor";
+  let value = localStorage.getItem(key);
+  if (!value) {
+    value = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    localStorage.setItem(key, value);
+  }
+  return value;
+}
+
+function browserInfo() {
+  const ua = navigator.userAgent || "";
+  return {
+    device: /Mobi|Android|iPhone|iPad/i.test(ua) ? "Celular/tablet" : "Computador",
+    browser: ua.includes("Edg/") ? "Edge" : ua.includes("Chrome/") ? "Chrome" : ua.includes("Firefox/") ? "Firefox" : ua.includes("Safari/") ? "Safari" : "Navegador",
+    os: ua.includes("Windows") ? "Windows" : ua.includes("Android") ? "Android" : ua.includes("iPhone") || ua.includes("iPad") ? "iOS" : ua.includes("Mac") ? "macOS" : "Sistema",
+  };
+}
+
+function adminEventBody(type, label = "", details = {}) {
+  return {
+    action: "event",
+    type,
+    label,
+    details,
+    visitorId: adminVisitorId(),
+    page: `${location.pathname}${location.hash || ""}`,
+    screen: `${window.screen.width}x${window.screen.height}`,
+    language: navigator.language || "",
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "",
+    online: navigator.onLine,
+    ...browserInfo(),
+  };
+}
+
+function trackAdminPageOpen() {
+  fetch(`${apiBase}${adminEndpoint}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(adminEventBody("admin_page_open", "admin aberto")),
+  }).catch(() => {});
+}
+
 function showDashboard() {
   $("#adminLogin").hidden = true;
   $("#dashboard").hidden = false;
@@ -34,11 +76,15 @@ function showLogin() {
   $("#dashboard").hidden = true;
 }
 
-async function login(password) {
-  const payload = await api("login", { password: password.trim() });
+async function login(userName, password) {
+  const payload = await api("login", {
+    ...adminEventBody("admin_login", userName.trim(), { userName: userName.trim() }),
+    userName: userName.trim(),
+    password: password.trim(),
+  });
   adminToken = payload.token;
-  sessionStorage.setItem(tokenKey, adminToken);
   showDashboard();
+  window.scrollTo(0, 0);
   await loadDashboard();
 }
 
@@ -61,6 +107,9 @@ function eventLabel(event) {
     modal_open: "abriu modal",
     photo_open: "abriu foto",
     photo_upload: "adicionou foto",
+    admin_page_open: "abriu o admin",
+    admin_login_success: "login admin aprovado",
+    admin_login_failed: "login admin negado",
     permission: "permissao",
     online: "ficou online",
     offline: "ficou offline",
@@ -101,7 +150,7 @@ function renderVisitors() {
       .slice(0, 6)
       .map(
         (v) =>
-          `<div class="visitor"><strong>${esc(v.device || "Visitante")}</strong><span>${fmt(v.lastSeenAt)} - ${esc(
+          `<div class="visitor"><strong>${esc(v.userName || v.device || "Visitante")}</strong><span>${fmt(v.lastSeenAt)} - ${esc(
             v.lastPage || "-"
           )}</span></div>`
       )
@@ -110,7 +159,7 @@ function renderVisitors() {
     rows
       .map(
         (v) =>
-          `<tr><td>${fmt(v.lastSeenAt)}</td><td>${esc(v.lastPage)}</td><td>${esc(v.device)}</td><td>${esc(
+          `<tr><td>${fmt(v.lastSeenAt)}</td><td>${esc(v.userName || "-")}</td><td>${esc(v.lastPage)}</td><td>${esc(v.device)}</td><td>${esc(
             v.browser
           )}</td><td>${esc(v.os)}</td><td>${esc(v.screen)}</td><td>${esc(v.language)}</td><td>${esc(
             v.ip
@@ -118,7 +167,7 @@ function renderVisitors() {
             v.online ? "online" : "offline"
           }</td></tr>`
       )
-      .join("") || `<tr><td colspan="10">Nenhum visitante registrado.</td></tr>`;
+      .join("") || `<tr><td colspan="11">Nenhum visitante registrado.</td></tr>`;
 }
 
 function renderPermissions() {
@@ -198,15 +247,15 @@ async function changePhoto(id, action) {
 
 function logout() {
   adminToken = "";
-  sessionStorage.removeItem(tokenKey);
   showLogin();
+  window.scrollTo(0, 0);
 }
 
 $("#loginForm").addEventListener("submit", async (event) => {
   event.preventDefault();
   $("#loginMessage").textContent = "";
   try {
-    await login($("#adminPassword").value);
+    await login($("#adminUserName").value, $("#adminPassword").value);
   } catch (error) {
     $("#loginMessage").textContent = error.message;
   }
@@ -251,9 +300,5 @@ $("#photoModal").addEventListener("click", (event) => {
   if (event.target.id === "photoModal") $("#photoModal").hidden = true;
 });
 
-if (adminToken) {
-  showDashboard();
-  loadDashboard().catch(logout);
-} else {
-  showLogin();
-}
+showLogin();
+trackAdminPageOpen();
