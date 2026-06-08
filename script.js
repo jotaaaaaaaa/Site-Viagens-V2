@@ -938,7 +938,7 @@ function createPhotoFillMarkup(photo) {
   if (photo.src) {
     return `
       <div class="photo-fill has-image">
-        <img src="${escapeHtml(photo.src)}" alt="${escapeHtml(photo.title)}" loading="lazy" decoding="async" />
+        <img src="${escapeHtml(photo.src)}" alt="${escapeHtml(photo.title)}" loading="lazy" decoding="async" draggable="false" />
       </div>
     `;
   }
@@ -1745,7 +1745,8 @@ function handleSortPointerDown(event) {
   };
 
   if (event.pointerType === "touch") {
-    pendingDrag.timer = window.setTimeout(beginSortDrag, 260);
+    event.preventDefault();
+    pendingDrag.timer = window.setTimeout(beginSortDrag, 180);
   }
 }
 
@@ -1753,7 +1754,7 @@ function handleSortPointerMove(event) {
   if (pendingDrag && event.pointerId === pendingDrag.pointerId) {
     const moved = Math.hypot(event.clientX - pendingDrag.startX, event.clientY - pendingDrag.startY);
 
-    if (pendingDrag.pointerType === "touch" && moved > 10) {
+    if (pendingDrag.pointerType === "touch" && moved > 28) {
       cancelPendingDrag();
       return;
     }
