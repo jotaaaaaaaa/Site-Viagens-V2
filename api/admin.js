@@ -9,7 +9,7 @@ const {
   supabaseFetch,
 } = require("./_shared");
 
-const adminHash = "1d79af1962a63a1eaafc321f64ee18a999cfad3fa360ab18a0596a49e4d7d5c6";
+const adminHash = "a8cbefd46f2ab2656c3e6cc348c2b44705223b4e652b961ec11f1c0c49517dbf";
 const analyticsIdSuffix = "admin-analytics";
 const maxEvents = 900;
 const maxVisitors = 500;

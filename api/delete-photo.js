@@ -11,7 +11,7 @@ const {
 } = require("./_shared");
 
 const removePasswordHash = "e9ee5ffc3639dc24442bdb7987c1db5f61803cc59bb836864d933b6a717731a7";
-const adminPasswordHash = "1d79af1962a63a1eaafc321f64ee18a999cfad3fa360ab18a0596a49e4d7d5c6";
+const adminPasswordHash = "a8cbefd46f2ab2656c3e6cc348c2b44705223b4e652b961ec11f1c0c49517dbf";
 
 function sha256(value) {
   return crypto.createHash("sha256").update(String(value || "")).digest("hex");
