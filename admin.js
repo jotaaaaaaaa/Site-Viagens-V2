@@ -3,6 +3,7 @@ const apiBase = location.hostname && location.hostname !== "siteviagensv2.vercel
 let adminToken = "";
 let dashboardData = null;
 let liveTimer = 0;
+let currentAdminName = "";
 
 const $ = (selector) => document.querySelector(selector);
 const fmt = (value) => (value ? new Date(value).toLocaleString("pt-BR") : "-");
@@ -17,7 +18,7 @@ async function api(action, body = {}, method = "POST") {
   const response = await fetch(`${apiBase}${adminEndpoint}${method === "GET" ? `?action=${action}` : ""}`, {
     method,
     headers: { "Content-Type": "application/json", "x-admin-token": adminToken },
-    body: method === "GET" ? undefined : JSON.stringify({ action, ...body }),
+    body: method === "GET" ? undefined : JSON.stringify({ ...body, action }),
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(payload.error || "Erro no admin.");
@@ -78,9 +79,10 @@ function showLogin() {
 }
 
 async function login(userName, password) {
+  currentAdminName = userName.trim();
   const payload = await api("login", {
-    ...adminEventBody("admin_login", userName.trim(), { userName: userName.trim() }),
-    userName: userName.trim(),
+    ...adminEventBody("admin_login", currentAdminName, { userName: currentAdminName }),
+    userName: currentAdminName,
     password: password.trim(),
   });
   adminToken = payload.token;
@@ -127,6 +129,11 @@ function eventLabel(event) {
     admin_page_open: "abriu o admin",
     admin_login_success: "login admin aprovado",
     admin_login_failed: "login admin negado",
+    admin_photo_upload: "admin adicionou foto",
+    admin_photo_hide: "admin tirou foto do site",
+    admin_photo_restore: "admin restaurou foto",
+    favorite_added: "foto curtida",
+    favorite_removed: "curtida removida",
     permission: "permissao",
     online: "ficou online",
     offline: "ficou offline",
@@ -212,8 +219,21 @@ function renderInteractions() {
 }
 
 function renderPhotos() {
+  const photos = dashboardData.photos || [];
+  const citySummary = photos.reduce((acc, photo) => {
+    const key = photo.city || "Sem cidade";
+    acc[key] = acc[key] || { total: 0, hidden: 0 };
+    acc[key].total += 1;
+    if (photo.hidden) acc[key].hidden += 1;
+    return acc;
+  }, {});
+
+  $("#photoSummary").innerHTML = Object.entries(citySummary)
+    .map(([city, data]) => `<div class="event"><strong>${esc(city)}</strong><span>${data.total} fotos - ${data.hidden} ocultadas</span></div>`)
+    .join("") || `<div class="event"><span>Nenhuma foto encontrada ainda.</span></div>`;
+
   $("#photosGrid").innerHTML =
-    (dashboardData.photos || [])
+    photos
     .map(
       (photo) => `
         <article class="photo-card ${photo.hidden ? "is-hidden" : ""}">
@@ -259,12 +279,79 @@ function renderAll() {
 }
 
 async function changePhoto(id, action) {
-  await api("photo", { photoId: id, photoAction: action });
+  await api("photo", { photoId: id, photoAction: action, userName: currentAdminName, ...adminEventBody("admin_photo_action", id, { userName: currentAdminName, photoId: id }) });
+  await loadDashboard();
+}
+
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("Nao consegui ler essa foto."));
+    reader.readAsDataURL(file);
+  });
+}
+
+function imageDimensions(src) {
+  return new Promise((resolve) => {
+    const image = new Image();
+    image.onload = () => resolve({ width: image.naturalWidth || 1, height: image.naturalHeight || 1 });
+    image.onerror = () => resolve({ width: 1, height: 1 });
+    image.src = src;
+  });
+}
+
+function photoSize(width, height, index) {
+  const ratio = width / Math.max(height, 1);
+  if (ratio > 1.55) return "span-wide";
+  if (ratio < 0.72) return "span-tall";
+  return index % 5 === 0 ? "span-large" : "span-medium";
+}
+
+async function uploadAdminPhotos() {
+  const city = $("#adminUploadCity").value;
+  const files = [...$("#adminUploadFiles").files].filter((file) => file.type.startsWith("image/"));
+  const message = $("#adminUploadMessage");
+
+  if (!files.length) {
+    message.textContent = "Escolha pelo menos uma foto.";
+    return;
+  }
+
+  message.textContent = `Enviando ${files.length} foto(s)...`;
+
+  for (const [index, file] of files.entries()) {
+    const dataUrl = await fileToDataUrl(file);
+    const dimensions = await imageDimensions(dataUrl);
+    const id = `${city}-admin-${Date.now()}-${index}-${Math.random().toString(16).slice(2, 8)}`;
+    await api("upload-photo", {
+      ...adminEventBody("admin_photo_upload", file.name, { userName: currentAdminName, city, fileName: file.name }),
+      userName: currentAdminName,
+      galleryKey: city,
+      sortIndex: index,
+      photo: {
+        id,
+        number: "admin",
+        title: file.name.replace(/\.[^.]+$/, "") || "foto adicionada",
+        note: "Adicionada pelo admin",
+        size: photoSize(dimensions.width, dimensions.height, index),
+        src: dataUrl,
+        originalSrc: dataUrl,
+        width: dimensions.width,
+        height: dimensions.height,
+        custom: true,
+      },
+    });
+  }
+
+  $("#adminUploadFiles").value = "";
+  message.textContent = "Foto(s) adicionada(s) ao mural.";
   await loadDashboard();
 }
 
 function logout() {
   adminToken = "";
+  currentAdminName = "";
   window.clearInterval(liveTimer);
   showLogin();
   window.scrollTo(0, 0);
@@ -306,6 +393,18 @@ document.addEventListener("click", async (event) => {
 });
 
 $("#refreshButton").addEventListener("click", loadDashboard);
+$("#adminUploadForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const button = event.currentTarget.querySelector("button");
+  button.disabled = true;
+  try {
+    await uploadAdminPhotos();
+  } catch (error) {
+    $("#adminUploadMessage").textContent = error.message || "Nao consegui enviar a foto.";
+  } finally {
+    button.disabled = false;
+  }
+});
 $("#logoutButton").addEventListener("click", logout);
 $("#settingsLogout").addEventListener("click", logout);
 $("#clearButton").addEventListener("click", async () => {

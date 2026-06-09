@@ -1326,6 +1326,8 @@ function toggleFavorite(id, sourceButton) {
     return;
   }
 
+  const willFavorite = !favorites.has(id);
+
   if (favorites.has(id)) {
     favorites.delete(id);
   } else {
@@ -1333,6 +1335,10 @@ function toggleFavorite(id, sourceButton) {
   }
 
   saveFavorites();
+  trackEvent(willFavorite ? "favorite_added" : "favorite_removed", id, {
+    photoId: id,
+    totalFavorites: favorites.size,
+  });
   syncHearts();
 
   document.querySelectorAll(`[data-heart-id="${id}"]`).forEach((button) => {

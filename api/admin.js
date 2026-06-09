@@ -2,12 +2,17 @@
 const fs = require("fs");
 const path = require("path");
 const {
+  extensionFromMime,
   getSupabaseConfig,
+  parseDataUrl,
   readJsonBody,
+  sanitizeGalleryKey,
+  sanitizePhoto,
   sanitizePhotoOrder,
   sendError,
   sendJson,
   setCorsHeaders,
+  storagePublicUrl,
   supabaseFetch,
 } = require("./_shared");
 
@@ -60,6 +65,16 @@ function requireAdmin(req, res, body = {}) {
 
 function clean(value, fallback = "") {
   return String(value || fallback).replace(/[\u0000-\u001f\u007f]/g, "").slice(0, 240);
+}
+
+function cleanPathPart(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9-]+/gi, "-")
+    .replace(/^-+|-+$/g, "")
+    .toLowerCase()
+    .slice(0, 120);
 }
 
 function clientIp(req) {
@@ -156,6 +171,12 @@ async function recordAdminLogin(body, req, success) {
   }
 }
 
+async function recordPublicEvent(body, req) {
+  const data = await readAnalytics();
+  addEvent(data, sanitizeEvent(body, req));
+  await writeAnalytics(data);
+}
+
 async function readSiteState() {
   const { tripId } = getSupabaseConfig();
   const rows = await supabaseFetch(`/rest/v1/trip_state?id=eq.${encodeURIComponent(tripId)}&select=favorites,photo_order,updated_at`);
@@ -170,6 +191,67 @@ async function writePhotoOrder(photoOrder, favorites) {
     headers: { "Content-Type": "application/json", Prefer: "resolution=merge-duplicates,return=minimal" },
     body: JSON.stringify([{ id: tripId, favorites, photo_order: photoOrder, updated_at: new Date().toISOString() }]),
   });
+}
+
+async function uploadObject(pathName, dataUrl) {
+  const { bucket } = getSupabaseConfig();
+  const { mimeType, buffer } = parseDataUrl(dataUrl);
+
+  await supabaseFetch(`/storage/v1/object/${encodeURIComponent(bucket)}/${pathName}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": mimeType,
+      "x-upsert": "true",
+    },
+    body: buffer,
+  });
+
+  return { mimeType, publicUrl: storagePublicUrl(pathName) };
+}
+
+async function uploadAdminPhoto(body, req) {
+  const { tripId } = getSupabaseConfig();
+  const galleryKey = sanitizeGalleryKey(body.galleryKey);
+  const photo = sanitizePhoto(body.photo);
+  const safeId = cleanPathPart(photo.id) || `${galleryKey}-${Date.now()}`;
+  const preview = parseDataUrl(photo.src);
+  const original = parseDataUrl(photo.originalSrc || photo.src);
+  const previewPath = `${cleanPathPart(tripId)}/${galleryKey}/${safeId}-preview.${extensionFromMime(preview.mimeType)}`;
+  const originalPath = `${cleanPathPart(tripId)}/${galleryKey}/${safeId}-original.${extensionFromMime(original.mimeType)}`;
+  const previewUpload = await uploadObject(previewPath, photo.src);
+  const originalUpload = await uploadObject(originalPath, photo.originalSrc || photo.src);
+  const savedPhoto = {
+    ...photo,
+    src: previewUpload.publicUrl,
+    originalSrc: originalUpload.publicUrl,
+    custom: true,
+  };
+
+  await supabaseFetch("/rest/v1/custom_photos", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify([
+      {
+        id: photo.id,
+        trip_id: tripId,
+        gallery_key: galleryKey,
+        data: savedPhoto,
+        sort_index: Number.isFinite(Number(body.sortIndex)) ? Number(body.sortIndex) : 0,
+      },
+    ]),
+  });
+
+  await recordPublicEvent(
+    {
+      ...body,
+      type: "admin_photo_upload",
+      label: `${cityLabels[galleryKey] || galleryKey} - ${photo.title || photo.id}`,
+      details: { city: galleryKey, photoId: photo.id, userName: body.userName || "" },
+    },
+    req
+  );
+
+  return savedPhoto;
 }
 
 function officialFiles() {
@@ -262,9 +344,7 @@ module.exports = async function handler(req, res) {
     }
 
     if (req.method === "POST" && action === "event") {
-      const data = await readAnalytics();
-      addEvent(data, sanitizeEvent(body, req));
-      await writeAnalytics(data);
+      await recordPublicEvent(body, req);
       sendJson(res, 200, { ok: true });
       return;
     }
@@ -284,7 +364,14 @@ module.exports = async function handler(req, res) {
         }
       });
       await writePhotoOrder(state.photoOrder, state.favorites.filter((photoId) => photoId !== id));
+      await recordPublicEvent({ ...body, type: photoAction === "restore" ? "admin_photo_restore" : "admin_photo_hide", label: id, details: { photoId: id, userName: body.userName || "" } }, req);
       sendJson(res, 200, { ok: true });
+      return;
+    }
+
+    if (req.method === "POST" && action === "upload-photo") {
+      const photo = await uploadAdminPhoto(body, req);
+      sendJson(res, 200, { ok: true, photo });
       return;
     }
 
