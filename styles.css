@@ -106,8 +106,8 @@ body.site-unlocked main {
   content: "";
   pointer-events: none;
   background:
-    radial-gradient(circle at 50% 45%, rgba(18, 16, 15, 0.36), rgba(18, 16, 15, 0.78) 58%, rgba(10, 11, 12, 0.9) 100%),
-    linear-gradient(180deg, rgba(10, 12, 14, 0.22), rgba(10, 12, 14, 0.74));
+    radial-gradient(circle at 50% 45%, rgba(18, 16, 15, 0.26), rgba(18, 16, 15, 0.66) 60%, rgba(10, 11, 12, 0.86) 100%),
+    linear-gradient(180deg, rgba(10, 12, 14, 0.16), rgba(10, 12, 14, 0.64));
 }
 
 .gate-photo-stream {
@@ -165,9 +165,9 @@ body.site-unlocked main {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  opacity: 0.9;
-  filter: blur(1.4px) saturate(0.92);
-  transform: scale(1.035);
+  opacity: 0.95;
+  filter: blur(1px) saturate(0.98) contrast(1.03);
+  transform: scale(1.025);
   -webkit-user-drag: none;
   user-select: none;
   -webkit-user-select: none;
@@ -2458,15 +2458,36 @@ body.trip-modal-open {
   }
 
   .gate-photo-stream {
-    inset: -14vh -24vw;
-    grid-template-columns: repeat(2, minmax(128px, 1fr));
-    gap: 14px;
-    opacity: 0.34;
-    transform: rotate(-7deg) scale(1.12);
+    inset: -16vh -16vw;
+    grid-template-columns: repeat(2, minmax(150px, 1fr));
+    gap: 12px;
+    opacity: 0.58;
+    transform: rotate(-6deg) scale(1.08);
   }
 
   .gate-photo-column {
-    gap: 14px;
+    gap: 12px;
+  }
+
+  .gate-stream-photo {
+    border-color: rgba(255, 250, 240, 0.18);
+    box-shadow: 0 16px 38px rgba(0, 0, 0, 0.2);
+  }
+
+  .gate-stream-photo img {
+    opacity: 0.98;
+    filter: blur(0.55px) saturate(1.04) contrast(1.04);
+    transform: scale(1.012);
+  }
+
+  .password-gate::before {
+    opacity: 0.08;
+  }
+
+  .password-gate::after {
+    background:
+      radial-gradient(circle at 50% 45%, rgba(18, 16, 15, 0.16), rgba(18, 16, 15, 0.48) 58%, rgba(10, 11, 12, 0.78) 100%),
+      linear-gradient(180deg, rgba(10, 12, 14, 0.08), rgba(10, 12, 14, 0.54));
   }
 
   .password-gate {
