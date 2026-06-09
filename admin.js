@@ -4,6 +4,8 @@ let adminToken = "";
 let dashboardData = null;
 let liveTimer = 0;
 let currentAdminName = "";
+const cityOrder = ["Madrid", "Alicante", "Amsterdam"];
+const cityStateKey = "site-viagens-admin-cidades-abertas";
 
 const $ = (selector) => document.querySelector(selector);
 const fmt = (value) => (value ? new Date(value).toLocaleString("pt-BR") : "-");
@@ -37,8 +39,11 @@ function adminVisitorId() {
 
 function browserInfo() {
   const ua = navigator.userAgent || "";
+  const isAppleMobile = /iPhone|iPad/i.test(ua);
+  const isAndroid = /Android/i.test(ua);
+  const mobileName = isAppleMobile ? "iPhone/iPad" : isAndroid ? "Android" : "Celular/tablet";
   return {
-    device: /Mobi|Android|iPhone|iPad/i.test(ua) ? "Celular/tablet" : "Computador",
+    device: /Mobi|Android|iPhone|iPad/i.test(ua) ? mobileName : "Computador",
     browser: ua.includes("Edg/") ? "Edge" : ua.includes("Chrome/") ? "Chrome" : ua.includes("Firefox/") ? "Firefox" : ua.includes("Safari/") ? "Safari" : "Navegador",
     os: ua.includes("Windows") ? "Windows" : ua.includes("Android") ? "Android" : ua.includes("iPhone") || ua.includes("iPad") ? "iOS" : ua.includes("Mac") ? "macOS" : "Sistema",
   };
@@ -174,16 +179,14 @@ function renderVisitors() {
       .slice(0, 6)
       .map(
         (v) =>
-          `<div class="visitor"><strong>${esc(v.userName || v.device || "Visitante")}</strong><span>${fmt(v.lastSeenAt)} - ${esc(
-            v.lastPage || "-"
-          )}</span></div>`
+          `<div class="visitor"><strong>${esc(visitorName(v))}</strong><span>${fmt(v.lastSeenAt)} - ${esc(v.lastPage || "-")}</span></div>`
       )
       .join("") || `<div class="visitor"><span>Nenhum visitante ainda.</span></div>`;
   $("#visitorsTable").innerHTML =
     rows
       .map(
         (v) =>
-          `<tr><td>${fmt(v.lastSeenAt)}</td><td>${esc(v.userName || "-")}</td><td>${esc(v.lastPage)}</td><td>${esc(v.device)}</td><td>${esc(
+          `<tr><td>${fmt(v.lastSeenAt)}</td><td>${esc(visitorName(v))}</td><td>${esc(v.lastPage)}</td><td>${esc(v.device)}</td><td>${esc(
             v.browser
           )}</td><td>${esc(v.os)}</td><td>${esc(v.screen)}</td><td>${esc(v.language)}</td><td>${esc(
             v.ip
@@ -192,6 +195,30 @@ function renderVisitors() {
           }</td></tr>`
       )
       .join("") || `<tr><td colspan="11">Nenhum visitante registrado.</td></tr>`;
+}
+
+function visitorName(visitor) {
+  if (visitor.userName) return visitor.userName;
+  if (visitor.os === "iOS") return visitor.device?.includes("iPhone") ? "iPhone" : "Aparelho iOS";
+  if (visitor.os === "Android") return "Android";
+  return visitor.device || "Visitante";
+}
+
+function readCityState() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(cityStateKey) || "{}");
+    return stored && typeof stored === "object" && !Array.isArray(stored) ? stored : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveCityState(state) {
+  localStorage.setItem(cityStateKey, JSON.stringify(state));
+}
+
+function cityKey(city) {
+  return String(city || "sem-cidade").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-");
 }
 
 function renderPermissions() {
@@ -227,31 +254,61 @@ function renderPhotos() {
     if (photo.hidden) acc[key].hidden += 1;
     return acc;
   }, {});
+  const openState = readCityState();
+  const grouped = photos.reduce((acc, photo) => {
+    const key = photo.city || "Sem cidade";
+    acc[key] = acc[key] || [];
+    acc[key].push(photo);
+    return acc;
+  }, {});
+  const orderedCities = [
+    ...cityOrder.filter((city) => grouped[city]),
+    ...Object.keys(grouped).filter((city) => !cityOrder.includes(city)).sort((a, b) => a.localeCompare(b, "pt-BR")),
+  ];
 
   $("#photoSummary").innerHTML = Object.entries(citySummary)
-    .map(([city, data]) => `<div class="event"><strong>${esc(city)}</strong><span>${data.total} fotos - ${data.hidden} ocultadas</span></div>`)
+    .map(([city, data]) => `<button class="summary-pill" type="button" data-city-jump="${esc(cityKey(city))}"><strong>${esc(city)}</strong><span>${data.total} fotos - ${data.hidden} ocultadas</span></button>`)
     .join("") || `<div class="event"><span>Nenhuma foto encontrada ainda.</span></div>`;
 
   $("#photosGrid").innerHTML =
-    photos
-    .map(
-      (photo) => `
-        <article class="photo-card ${photo.hidden ? "is-hidden" : ""}">
-          <div class="photo-thumb">${
-            photo.thumbnail
-              ? `<img src="${esc(photo.thumbnail)}" data-preview="${esc(photo.original || photo.thumbnail)}" alt="${esc(photo.name)}" />`
-              : `<span>${esc(photo.id)}</span>`
-          }</div>
-          <div class="photo-body">
-            <h4>${esc(photo.name)}</h4>
-            <p>${esc(photo.city)} - ${esc(photo.type)} ${photo.hidden ? "- ocultada" : ""}</p>
-            <button data-photo-action="${photo.hidden ? "restore" : "hide"}" data-photo-id="${esc(photo.id)}">${
-        photo.hidden ? "Restaurar" : "Tirar do site"
-      }</button>
+    orderedCities
+    .map((city) => {
+      const items = grouped[city] || [];
+      const hidden = items.filter((photo) => photo.hidden).length;
+      const key = cityKey(city);
+      const isOpen = openState[key] !== false;
+      return `
+        <section class="city-folder ${isOpen ? "is-open" : ""}" id="city-folder-${esc(key)}">
+          <button class="city-folder-head" type="button" data-city-toggle="${esc(key)}" aria-expanded="${String(isOpen)}">
+            <span class="folder-icon" aria-hidden="true">${isOpen ? "▾" : "▸"}</span>
+            <span><strong>${esc(city)}</strong><small>${items.length} fotos · ${hidden} ocultadas</small></span>
+          </button>
+          <div class="city-folder-body">
+            <div class="photos">
+              ${items.map(renderPhotoCard).join("")}
+            </div>
           </div>
-        </article>`
-    )
+        </section>`;
+    })
     .join("") || `<div class="event"><span>Nenhuma foto encontrada ainda.</span></div>`;
+}
+
+function renderPhotoCard(photo) {
+  return `
+    <article class="photo-card ${photo.hidden ? "is-hidden" : ""}">
+      <div class="photo-thumb">${
+        photo.thumbnail
+          ? `<img src="${esc(photo.thumbnail)}" data-preview="${esc(photo.original || photo.thumbnail)}" alt="${esc(photo.name)}" />`
+          : `<span>${esc(photo.id)}</span>`
+      }</div>
+      <div class="photo-body">
+        <h4>${esc(photo.name)}</h4>
+        <p>${esc(photo.type)} ${photo.hidden ? "- ocultada" : ""}</p>
+        <button data-photo-action="${photo.hidden ? "restore" : "hide"}" data-photo-id="${esc(photo.id)}">${
+    photo.hidden ? "Restaurar" : "Tirar do site"
+  }</button>
+      </div>
+    </article>`;
 }
 
 function renderSystem() {
@@ -383,6 +440,24 @@ document.addEventListener("click", async (event) => {
     } catch (error) {
       window.alert(error.message);
     }
+  }
+
+  const cityToggle = event.target.closest("[data-city-toggle]");
+  if (cityToggle) {
+    const state = readCityState();
+    const key = cityToggle.dataset.cityToggle;
+    state[key] = !(state[key] !== false);
+    saveCityState(state);
+    renderPhotos();
+  }
+
+  const cityJump = event.target.closest("[data-city-jump]");
+  if (cityJump) {
+    const state = readCityState();
+    state[cityJump.dataset.cityJump] = true;
+    saveCityState(state);
+    renderPhotos();
+    document.getElementById(`city-folder-${cityJump.dataset.cityJump}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   const preview = event.target.closest("[data-preview]");

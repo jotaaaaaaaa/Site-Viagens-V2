@@ -7,8 +7,8 @@
     <title>Admin | Mural de Viagem</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./admin.css?v=20260609-live-admin" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./admin.css?v=20260609-folders-admin" />
   </head>
   <body>
     <section class="admin-login" id="adminLogin">
@@ -46,13 +46,13 @@
         <section class="view active" data-view="overview"><div class="metrics" id="metrics"></div><div class="grid2"><article class="card"><h3>Atividade recente</h3><div class="timeline" id="overviewTimeline"></div></article><article class="card"><h3>Visitantes recentes</h3><div id="visitorCards"></div></article></div></section>
         <section class="view" data-view="visitors"><article class="card wide"><h3>Visitantes</h3><div class="table-wrap"><table><thead><tr><th>Ultimo acesso</th><th>Usuario</th><th>Pagina</th><th>Dispositivo</th><th>Navegador</th><th>Sistema</th><th>Tela</th><th>Idioma</th><th>IP aprox.</th><th>Local</th><th>Status</th></tr></thead><tbody id="visitorsTable"></tbody></table></div></article></section>
         <section class="view" data-view="permissions"><article class="card wide"><h3>Permissoes</h3><div class="table-wrap"><table><thead><tr><th>Data</th><th>Permissao</th><th>Status</th><th>Pagina</th><th>Visitante</th></tr></thead><tbody id="permissionsTable"></tbody></table></div></article></section>
-        <section class="view" data-view="photos"><div class="grid2"><article class="card"><h3>Adicionar foto</h3><form class="admin-upload" id="adminUploadForm"><label for="adminUploadCity">Cidade</label><select id="adminUploadCity"><option value="madrid">Madrid</option><option value="alicante">Alicante</option><option value="amsterdam">Amsterdam</option></select><label for="adminUploadFiles">Fotos</label><input id="adminUploadFiles" type="file" accept="image/*" multiple required /><button type="submit">Adicionar ao mural</button><p class="message" id="adminUploadMessage"></p></form></article><article class="card"><h3>Resumo</h3><div id="photoSummary"></div></article></div><article class="card wide"><div class="heading"><h3>Fotos do mural</h3><span>Ocultar remove do site. Restaurar devolve para a cidade correta.</span></div><div class="photos" id="photosGrid"></div></article></section>
+        <section class="view" data-view="photos"><div class="grid2"><article class="card"><h3>Adicionar foto</h3><p class="helper">Escolha a cidade e envie uma ou varias fotos. Elas entram no mural e ficam salvas no Supabase.</p><form class="admin-upload" id="adminUploadForm"><label for="adminUploadCity">Cidade</label><select id="adminUploadCity"><option value="madrid">Madrid</option><option value="alicante">Alicante</option><option value="amsterdam">Amsterdam</option></select><label for="adminUploadFiles">Fotos</label><input id="adminUploadFiles" type="file" accept="image/*" multiple required /><button type="submit">Adicionar ao mural</button><p class="message" id="adminUploadMessage"></p></form></article><article class="card"><h3>Resumo</h3><div id="photoSummary"></div></article></div><article class="card wide"><div class="heading"><div><h3>Fotos do mural</h3><span>Clique em uma cidade para abrir ou recolher as fotos.</span></div><span>Ocultar tira do site. Restaurar devolve para a cidade correta.</span></div><div class="photo-folders" id="photosGrid"></div></article></section>
         <section class="view" data-view="activity"><article class="card wide"><h3>Atividade recente</h3><div class="timeline" id="activityTimeline"></div></article></section>
         <section class="view" data-view="interactions"><article class="card wide"><h3>Cliques e interacoes</h3><div class="table-wrap"><table><thead><tr><th>Data</th><th>Evento</th><th>Detalhe</th><th>Pagina</th><th>Visitante</th></tr></thead><tbody id="interactionsTable"></tbody></table></div></article></section>
         <section class="view" data-view="settings"><div class="grid2"><article class="card"><h3>Status</h3><dl id="systemList"></dl></article><article class="card danger"><h3>Admin</h3><button id="clearButton">Limpar dados de teste</button><button id="settingsLogout">Sair do admin</button><p>Nao capturamos camera, microfone ou localizacao escondido. O painel registra apenas dados permitidos e aproximados.</p></article></div></section>
       </main>
     </section>
     <div class="photo-modal" id="photoModal" hidden><button id="photoClose">×</button><img id="photoImage" alt="Foto ampliada" /></div>
-    <script src="./admin.js?v=20260609-live-admin"></script>
+    <script src="./admin.js?v=20260609-folders-admin"></script>
   </body>
 </html>
