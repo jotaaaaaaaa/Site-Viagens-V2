@@ -1,4 +1,6 @@
 ﻿const crypto = require("crypto");
+const fs = require("fs");
+const path = require("path");
 const {
   getSupabaseConfig,
   readJsonBody,
@@ -15,6 +17,7 @@ const maxEvents = 900;
 const maxVisitors = 500;
 const cityLabels = { madrid: "Madrid", alicante: "Alicante", amsterdam: "Amsterdam" };
 const officialCounts = { madrid: 13, alicante: 16, amsterdam: 28 };
+let officialFileCache = null;
 
 function sha256(value) {
   return crypto.createHash("sha256").update(String(value || "")).digest("hex");
@@ -169,12 +172,37 @@ async function writePhotoOrder(photoOrder, favorites) {
   });
 }
 
+function officialFiles() {
+  if (officialFileCache) return officialFileCache;
+
+  const result = { madrid: [], alicante: [], amsterdam: [] };
+  const folder = path.join(process.cwd(), "assets", "fotos");
+
+  try {
+    fs.readdirSync(folder)
+      .filter((file) => /\.(jpe?g|png|webp|gif)$/i.test(file))
+      .forEach((file) => {
+        const city = Object.keys(result).find((key) => file.startsWith(`${key}-`));
+        if (city) result[city].push(file.replace(`${city}-`, ""));
+      });
+  } catch {
+    Object.keys(result).forEach((city) => {
+      result[city] = Array.from({ length: officialCounts[city] || 0 }, (_, index) => `${String(index + 1).padStart(2, "0")}.jpg`);
+    });
+  }
+
+  Object.keys(result).forEach((city) => result[city].sort((a, b) => a.localeCompare(b, "pt-BR", { numeric: true })));
+  officialFileCache = result;
+  return officialFileCache;
+}
+
 function officialPhotos(hidden) {
-  return Object.entries(officialCounts).flatMap(([city, count]) =>
-    Array.from({ length: count }, (_, index) => {
+  return Object.entries(officialFiles()).flatMap(([city, files]) =>
+    files.map((fileName, index) => {
       const number = String(index + 1).padStart(2, "0");
       const id = `${city}-${number}`;
-      return { id, name: `${cityLabels[city]} ${number}`, gallery: city, city: cityLabels[city], type: "oficial", hidden: hidden.has(id), thumbnail: "", original: "" };
+      const src = `/assets/fotos/${encodeURIComponent(`${city}-${fileName}`)}`;
+      return { id, name: `${cityLabels[city]} ${number}`, gallery: city, city: cityLabels[city], type: "oficial", hidden: hidden.has(id), thumbnail: src, original: src };
     })
   );
 }

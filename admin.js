@@ -2,6 +2,7 @@ const adminEndpoint = "/api/admin";
 const apiBase = location.hostname && location.hostname !== "siteviagensv2.vercel.app" ? "https://siteviagensv2.vercel.app" : "";
 let adminToken = "";
 let dashboardData = null;
+let liveTimer = 0;
 
 const $ = (selector) => document.querySelector(selector);
 const fmt = (value) => (value ? new Date(value).toLocaleString("pt-BR") : "-");
@@ -86,11 +87,27 @@ async function login(userName, password) {
   showDashboard();
   window.scrollTo(0, 0);
   await loadDashboard();
+  startLiveUpdates();
 }
 
 async function loadDashboard() {
-  dashboardData = await api("dashboard", {}, "GET");
-  renderAll();
+  try {
+    dashboardData = await api("dashboard", {}, "GET");
+    renderAll();
+    const status = $("#liveStatus");
+    if (status) status.textContent = `Ao vivo - atualizado ${new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`;
+  } catch (error) {
+    const status = $("#liveStatus");
+    if (status) status.textContent = "Conexao instavel - tentando atualizar";
+    if (!dashboardData) throw error;
+  }
+}
+
+function startLiveUpdates() {
+  window.clearInterval(liveTimer);
+  liveTimer = window.setInterval(() => {
+    if (adminToken && !document.hidden) loadDashboard().catch(() => {});
+  }, 8000);
 }
 
 function metric(label, value) {
@@ -195,7 +212,8 @@ function renderInteractions() {
 }
 
 function renderPhotos() {
-  $("#photosGrid").innerHTML = (dashboardData.photos || [])
+  $("#photosGrid").innerHTML =
+    (dashboardData.photos || [])
     .map(
       (photo) => `
         <article class="photo-card ${photo.hidden ? "is-hidden" : ""}">
@@ -213,7 +231,7 @@ function renderPhotos() {
           </div>
         </article>`
     )
-    .join("");
+    .join("") || `<div class="event"><span>Nenhuma foto encontrada ainda.</span></div>`;
 }
 
 function renderSystem() {
@@ -247,6 +265,7 @@ async function changePhoto(id, action) {
 
 function logout() {
   adminToken = "";
+  window.clearInterval(liveTimer);
   showLogin();
   window.scrollTo(0, 0);
 }
