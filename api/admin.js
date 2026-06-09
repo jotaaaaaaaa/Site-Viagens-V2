@@ -16,7 +16,7 @@ const {
   supabaseFetch,
 } = require("./_shared");
 
-const adminHash = "a8cbefd46f2ab2656c3e6cc348c2b44705223b4e652b961ec11f1c0c49517dbf";
+const fallbackAdminHash = "a8cbefd46f2ab2656c3e6cc348c2b44705223b4e652b961ec11f1c0c49517dbf";
 const analyticsIdSuffix = "admin-analytics";
 const maxEvents = 900;
 const maxVisitors = 500;
@@ -36,7 +36,11 @@ function safeEqual(left, right) {
 
 function secret() {
   const { serviceKey } = getSupabaseConfig();
-  return process.env.ADMIN_SESSION_SECRET || `${serviceKey}:${adminHash}`;
+  return process.env.ADMIN_SESSION_SECRET || `${serviceKey}:${adminPasswordHash()}`;
+}
+
+function adminPasswordHash() {
+  return process.env.ADMIN_PASSWORD_SHA256 || fallbackAdminHash;
 }
 
 function createToken() {
@@ -333,7 +337,7 @@ module.exports = async function handler(req, res) {
     const action = clean(req.query?.action || body.action || "dashboard");
 
     if (req.method === "POST" && action === "login") {
-      if (!safeEqual(sha256(String(body.password || "").trim()), adminHash)) {
+      if (!safeEqual(sha256(String(body.password || "").trim()), adminPasswordHash())) {
         await recordAdminLogin(body, req, false);
         sendError(res, 401, "Senha admin invalida.");
         return;

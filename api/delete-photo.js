@@ -10,8 +10,8 @@ const {
   supabaseFetch,
 } = require("./_shared");
 
-const removePasswordHash = "e9ee5ffc3639dc24442bdb7987c1db5f61803cc59bb836864d933b6a717731a7";
-const adminPasswordHash = "a8cbefd46f2ab2656c3e6cc348c2b44705223b4e652b961ec11f1c0c49517dbf";
+const fallbackRemovePasswordHash = "e9ee5ffc3639dc24442bdb7987c1db5f61803cc59bb836864d933b6a717731a7";
+const fallbackAdminPasswordHash = "a8cbefd46f2ab2656c3e6cc348c2b44705223b4e652b961ec11f1c0c49517dbf";
 
 function sha256(value) {
   return crypto.createHash("sha256").update(String(value || "")).digest("hex");
@@ -30,6 +30,8 @@ function sanitizePhotoId(value) {
 }
 
 function validSecret(body) {
+  const adminPasswordHash = process.env.ADMIN_PASSWORD_SHA256 || fallbackAdminPasswordHash;
+  const removePasswordHash = process.env.PHOTO_REMOVE_PASSWORD_SHA256 || fallbackRemovePasswordHash;
   if (body.adminPassword) return safeEqual(sha256(String(body.adminPassword || "").trim()), adminPasswordHash);
   return safeEqual(sha256(String(body.removePassword || "").trim()), removePasswordHash);
 }

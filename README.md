@@ -21,8 +21,11 @@ Ao abrir direto pelo arquivo `index.html`, o site continua funcionando com salva
 SUPABASE_URL=https://seu-projeto.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=sua-service-role-key
 SUPABASE_STORAGE_BUCKET=site-viagem-fotos
-SITE_ACCESS_CODE=gatabrisa
+SITE_ACCESS_CODE=sua-senha-do-mural
 SITE_TRIP_ID=madrid-alicante-amsterdam-2026
+ADMIN_PASSWORD_SHA256=opcional-hash-sha256-da-senha-admin
+PHOTO_REMOVE_PASSWORD_SHA256=opcional-hash-sha256-da-senha-de-remocao
+ADMIN_SESSION_SECRET=opcional-segredo-longo-aleatorio
 ```
 
 5. Faca o deploy.
@@ -33,3 +36,5 @@ SITE_TRIP_ID=madrid-alicante-amsterdam-2026
 Use a `service_role key` somente nas variaveis da Vercel. Nao coloque essa chave dentro de `script.js`, `index.html` ou qualquer arquivo publico.
 
 O bucket `site-viagem-fotos` fica publico para que as fotos carreguem no site, mas o upload passa pela API da Vercel e exige a senha configurada em `SITE_ACCESS_CODE`.
+
+Nao coloque senhas reais, tokens do GitHub ou chaves do Supabase no GitHub. Guarde esses valores apenas nas variaveis de ambiente da Vercel/Supabase.
